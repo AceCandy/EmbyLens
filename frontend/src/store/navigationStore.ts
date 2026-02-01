@@ -97,7 +97,8 @@ export const defaultLayout: MenuGroup[] = [
       'TypeManagerView', 
       'CleanupToolsView', 
       'LockManagerView', 
-      'AutoTagsView'
+      'AutoTagsView',
+      'ActorManagerView'
     ]
   },
   {
@@ -105,7 +106,7 @@ export const defaultLayout: MenuGroup[] = [
     label: '实验室',
     visible: true,
     type: 'group',
-    items: ['TmdbLabView', 'BangumiLabView', 'AILabView', 'ActorLabView', 'ActorManagerView']
+    items: ['TmdbLabView', 'BangumiLabView', 'AILabView', 'ActorLabView']
   },
   {
     key: 'group-others',

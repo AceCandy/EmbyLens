@@ -96,6 +96,7 @@ export const groupedMenuOptions = [
       allMenuItems.find(i => i.key === 'CleanupToolsView'),
       allMenuItems.find(i => i.key === 'LockManagerView'),
       allMenuItems.find(i => i.key === 'AutoTagsView'),
+      allMenuItems.find(i => i.key === 'ActorManagerView'),
     ]
   },
   {
@@ -117,7 +118,6 @@ export const groupedMenuOptions = [
       allMenuItems.find(i => i.key === 'BangumiLabView'),
       allMenuItems.find(i => i.key === 'AILabView'),
       allMenuItems.find(i => i.key === 'ActorLabView'),
-      allMenuItems.find(i => i.key === 'ActorManagerView'),
     ]
   },
   {
