@@ -12,27 +12,25 @@
           <n-space vertical size="large">
             <!-- 1. 搜索配置 -->
             <n-card title="检索配置" size="small">
-              <n-form label-placement="left" label-width="100">
-                <n-grid :cols="2" :x-gap="24">
-                  <n-form-item-gi label="TMDB ID">
-                    <n-input v-model:value="form.tmdb_id" placeholder="输入 ID (如: 94359)" @keyup.enter="handleSearch" />
-                  </n-form-item-gi>
-                  <n-form-item-gi label="检索范围">
-                    <n-checkbox-group v-model:value="searchTypes">
-                      <n-space>
-                        <n-checkbox value="movies">电影</n-checkbox>
-                        <n-checkbox value="series">剧集</n-checkbox>
-                      </n-space>
-                    </n-checkbox-group>
-                  </n-form-item-gi>
-                </n-grid>
-                <n-space justify="end">
+              <n-space vertical size="medium">
+                <n-input-group>
+                  <n-input-group-label style="width: 100px">TMDB ID</n-input-group-label>
+                  <n-input v-model:value="form.tmdb_id" placeholder="输入 ID (如: 94359)" @keyup.enter="handleSearch" />
                   <n-button type="primary" @click="handleSearch" :loading="loading">
                     <template #icon><n-icon><SearchIcon /></n-icon></template>
                     执行搜索
                   </n-button>
+                </n-input-group>
+                <n-space align="center">
+                  <n-text depth="3">检索范围:</n-text>
+                  <n-checkbox-group v-model:value="searchTypes">
+                    <n-space>
+                      <n-checkbox value="movies">电影</n-checkbox>
+                      <n-checkbox value="series">剧集</n-checkbox>
+                    </n-space>
+                  </n-checkbox-group>
                 </n-space>
-              </n-form>
+              </n-space>
             </n-card>
 
             <!-- 2. 结果展示区 -->

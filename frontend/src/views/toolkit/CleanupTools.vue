@@ -34,7 +34,7 @@
             <!-- 2. 原子工具卡片 -->
             <n-grid :cols="2" :x-gap="12" :y-gap="12" item-responsive responsive="screen">
               <n-gi span="2 m:1">
-                <n-card title="演职员信息清空" size="small" style="height: 100%">
+                <n-card title="演职员信息清空" size="small" style="height: 100%" content-style="display: flex; flex-direction: column; justify-content: space-between;">
                   <n-space vertical>
                     <n-text depth="3" style="font-size: 12px">操作媒体类型：</n-text>
                     <n-checkbox-group v-model:value="peopleItemTypes">
@@ -43,25 +43,29 @@
                         <n-checkbox value="Series">剧集</n-checkbox>
                       </n-space>
                     </n-checkbox-group>
+                  </n-space>
+                  <div style="margin-top: 16px">
                     <n-divider style="margin: 8px 0" />
                     <n-button block type="error" secondary @click="handleAction('people_remover')" :loading="loading">
                       <template #icon><n-icon><DeleteIcon /></n-icon></template>
                       执行清空演职员
                     </n-button>
-                  </n-space>
+                  </div>
                 </n-card>
               </n-gi>
 
               <n-gi span="2 m:1">
-                <n-card title="集类型(Episode)重置" size="small" style="height: 100%">
+                <n-card title="集类型(Episode)重置" size="small" style="height: 100%" content-style="display: flex; flex-direction: column; justify-content: space-between;">
                   <n-p depth="3" style="font-size: 12px">
                     扫描指定媒体库中的所有剧集，清除“集”层级的 Genres 标签。
                   </n-p>
-                  <n-divider style="margin: 8px 0" />
-                  <n-button block type="primary" secondary @click="handleAction('episode_deleter')" :loading="loading">
-                    <template #icon><n-icon><FixIcon /></n-icon></template>
-                    执行修复重置
-                  </n-button>
+                  <div style="margin-top: 16px">
+                    <n-divider style="margin: 8px 0" />
+                    <n-button block type="primary" secondary @click="handleAction('episode_deleter')" :loading="loading">
+                      <template #icon><n-icon><FixIcon /></n-icon></template>
+                      执行修复重置
+                    </n-button>
+                  </div>
                 </n-card>
               </n-gi>
             </n-grid>

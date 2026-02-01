@@ -28,7 +28,7 @@
             <n-grid :x-gap="12" :y-gap="12" :cols="2" item-responsive responsive="screen">
               <!-- 1. 密码修改 -->
               <n-gi span="2 m:1">
-                <n-card title="修改管理员密码" size="small" segmented style="height: 100%">
+                <n-card title="修改管理员密码" size="small" segmented style="height: 100%" content-style="display: flex; flex-direction: column; justify-content: space-between;">
                   <n-form size="medium">
                     <n-form-item label="旧密码">
                       <n-input v-model:value="pwdForm.old_password" type="password" show-password-on="click" placeholder="请输入当前密码" />
@@ -36,17 +36,19 @@
                     <n-form-item label="新密码">
                       <n-input v-model:value="pwdForm.new_password" type="password" show-password-on="click" placeholder="请输入新密码" />
                     </n-form-item>
+                  </n-form>
+                  <div style="margin-top: 16px">
                     <n-button type="primary" block @click="handleChangePassword">
                       <template #icon><n-icon><LockIcon /></n-icon></template>
                       确认修改密码
                     </n-button>
-                  </n-form>
+                  </div>
                 </n-card>
               </n-gi>
 
               <!-- 2. 2FA 设置 -->
               <n-gi span="2 m:1">
-                <n-card title="双重验证 (2FA)" size="small" segmented style="height: 100%">
+                <n-card title="双重验证 (2FA)" size="small" segmented style="height: 100%" content-style="display: flex; flex-direction: column; justify-content: space-between;">
                   <n-space vertical size="large">
                     <n-alert 
                       :type="authInfo.is_otp_enabled ? 'success' : 'warning'" 
@@ -56,35 +58,36 @@
                     </n-alert>
                     
                     <!-- 未开启状态 -->
-                    <div v-if="!authInfo.is_otp_enabled">
-                      <div v-if="!otpSetup.qr_code">
-                        <n-button block type="primary" @click="setupOtp">
-                          <template #icon><n-icon><SecurityIcon /></n-icon></template>
-                          开始设置 2FA
-                        </n-button>
+                    <div v-if="!authInfo.is_otp_enabled && otpSetup.qr_code" style="display: flex; flex-direction: column; align-items: center;">
+                      <div style="background: white; padding: 8px; border-radius: 8px; margin-bottom: 16px;">
+                        <img :src="otpSetup.qr_code" style="width: 140px; display: block;" />
                       </div>
-                      
-                      <div v-else style="display: flex; flex-direction: column; align-items: center;">
-                        <div style="background: white; padding: 8px; border-radius: 8px; margin-bottom: 16px;">
-                          <img :src="otpSetup.qr_code" style="width: 140px; display: block;" />
-                        </div>
-                        <n-input-group>
-                          <n-input v-model:value="otpSetup.code" placeholder="6 位验证码" maxlength="6" />
-                          <n-button type="primary" @click="enableOtp">
-                            <template #icon><n-icon><LinkIcon /></n-icon></template>
-                            绑定
-                          </n-button>
-                        </n-input-group>
-                        <n-button text @click="otpSetup.qr_code = ''" style="margin-top: 10px;">
-                          <template #icon><n-icon><BackIcon /></n-icon></template>
-                          返回
+                      <n-input-group>
+                        <n-input v-model:value="otpSetup.code" placeholder="6 位验证码" maxlength="6" />
+                        <n-button type="primary" @click="enableOtp">
+                          <template #icon><n-icon><LinkIcon /></n-icon></template>
+                          绑定
                         </n-button>
-                      </div>
+                      </n-input-group>
+                      <n-button text @click="otpSetup.qr_code = ''" style="margin-top: 10px;">
+                        <template #icon><n-icon><BackIcon /></n-icon></template>
+                        返回
+                      </n-button>
+                    </div>
+                  </n-space>
+
+                  <div style="margin-top: 16px">
+                    <!-- 未开启状态的初始按钮 -->
+                    <div v-if="!authInfo.is_otp_enabled && !otpSetup.qr_code">
+                      <n-button block type="primary" @click="setupOtp">
+                        <template #icon><n-icon><SecurityIcon /></n-icon></template>
+                        开始设置 2FA
+                      </n-button>
                     </div>
                     
-                    <!-- 已开启状态 -->
+                    <!-- 已开启状态的按钮 -->
                     <n-button 
-                      v-else 
+                      v-if="authInfo.is_otp_enabled" 
                       block 
                       @click="disableOtp" 
                       type="error" 
@@ -93,7 +96,7 @@
                       <template #icon><n-icon><ShieldOffIcon /></n-icon></template>
                       停用双重验证 (2FA)
                     </n-button>
-                  </n-space>
+                  </div>
                 </n-card>
               </n-gi>
             </n-grid>
