@@ -1,6 +1,7 @@
 import { reactive } from 'vue'
 import { useMessage } from 'naive-ui'
 import { authApi } from '@/api/auth'
+import { uiAuthEnabled as globalUiAuthEnabled } from '@/store/navigationStore'
 
 export function useAuthManager() {
   const message = useMessage()
@@ -26,6 +27,8 @@ export function useAuthManager() {
       await authApi.updateSystemConfig([
         { key: 'ui_auth_enabled', value: String(authInfo.ui_auth_enabled) }
       ])
+      // 同步更新全局状态，使右上角 UI 立即响应
+      globalUiAuthEnabled.value = authInfo.ui_auth_enabled
       message.success(authInfo.ui_auth_enabled ? '已开启登录验证' : '已关闭登录验证 (免密模式)')
     } catch (err) {
       authInfo.ui_auth_enabled = !authInfo.ui_auth_enabled
@@ -38,6 +41,8 @@ export function useAuthManager() {
     
     const statusData: any = await authApi.getStatus()
     authInfo.ui_auth_enabled = statusData.ui_auth_enabled
+    // 初始化时也同步一次全局状态
+    globalUiAuthEnabled.value = statusData.ui_auth_enabled
   }
 
   const setupOtp = async () => {

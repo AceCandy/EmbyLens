@@ -18,10 +18,16 @@
             <n-card title="系统访问安全" size="small" segmented>
               <div style="display: flex; justify-content: space-between; align-items: center;">
                 <n-thing title="强制登录验证" description="开启后，访问系统必须先通过账号密码登录。关闭则直接进入仪表盘。" />
-                <n-switch v-model:value="authInfo.ui_auth_enabled" @update:value="toggleGlobalAuth" size="large">
-                  <template #checked>已开启</template>
-                  <template #unchecked>已关闭</template>
-                </n-switch>
+                <n-space align="center">
+                  <n-switch v-model:value="authInfo.ui_auth_enabled" size="large">
+                    <template #checked>已开启</template>
+                    <template #unchecked>已关闭</template>
+                  </n-switch>
+                  <n-button type="primary" secondary size="small" @click="toggleGlobalAuth">
+                    <template #icon><n-icon><SaveIcon /></n-icon></template>
+                    保存设置
+                  </n-button>
+                </n-space>
               </div>
             </n-card>
 
@@ -141,7 +147,8 @@ import {
   SecurityOutlined as SecurityIcon,
   LinkOutlined as LinkIcon,
   ArrowBackOutlined as BackIcon,
-  ShieldMoonOutlined as ShieldOffIcon
+  ShieldMoonOutlined as ShieldOffIcon,
+  SaveOutlined as SaveIcon
 } from '@vicons/material'
 
 // 导入提取的逻辑
