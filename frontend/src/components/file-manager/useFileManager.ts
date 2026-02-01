@@ -2,6 +2,7 @@ import { ref, reactive, computed, h } from 'vue'
 import { useMessage, useDialog, NInput } from 'naive-ui'
 import { getParentPath } from './utils'
 import type { FileItem, FileProvider } from './types'
+import { copyText, copyTextFallback } from '@/utils/clipboard'
 
 export function useFileManager(props: { hostId: number | string, provider: FileProvider, initialPath?: string }) {
   const message = useMessage()
@@ -56,38 +57,18 @@ export function useFileManager(props: { hostId: number | string, provider: FileP
     showEditor.value = true
   }
 
-  const copyToClipboard = (text: string) => {
-    if (navigator.clipboard && window.isSecureContext) {
-      navigator.clipboard.writeText(text).then(() => {
-        message.success('已复制到剪贴板')
-      }).catch(() => {
-        fallbackCopy(text)
-      })
-    } else {
-      fallbackCopy(text)
-    }
-  }
-
-  const fallbackCopy = (text: string) => {
-    const textArea = document.createElement("textarea")
-    textArea.value = text
-    textArea.style.position = "fixed"
-    textArea.style.left = "-9999px"
-    textArea.style.top = "0"
-    document.body.appendChild(textArea)
-    textArea.focus()
-    textArea.select()
-    try {
-      document.execCommand('copy')
-      message.success('已复制到剪贴板')
-    } catch (err) {
-      message.error('无法复制路径')
-    }
-    document.body.removeChild(textArea)
-  }
-
   const copyPath = (path: string) => {
-    copyToClipboard(path)
+    if (!path) return
+    
+    // HTTP 下必须同步执行
+    const success = copyTextFallback(path)
+    
+    if (success) {
+      message.success(`已复制路径: ${path}`)
+    } else {
+      console.error('[FileManager] Synchronous copy failed')
+      message.error('复制失败，请尝试手动选中路径复制')
+    }
   }
 
   const handleCopy = (item: FileItem, type: 'copy' | 'cut' = 'copy') => {

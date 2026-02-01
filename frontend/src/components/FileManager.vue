@@ -227,13 +227,20 @@ const contextMenuOptions = computed(() => {
 })
 
 const onContextMenuSelect = (key: string) => {
-  showContextMenu.value = false
   const item = contextMenuItem.value
+  
+  if (key === 'copyPath') {
+    // 关键：在任何 UI 状态改变（如关闭菜单）之前，立即同步执行复制
+    copyPath(item.path)
+    showContextMenu.value = false
+    return
+  }
+
+  showContextMenu.value = false
 
   if (key === 'open') handleDoubleClick(item)
   else if (key === 'copy') handleCopy(item, 'copy')
   else if (key === 'cut') handleCopy(item, 'cut')
-  else if (key === 'copyPath') copyPath(item.path)
   else if (key === 'paste') handlePaste()
   else if (key === 'mkdir') showMkdirModal.value = true
   else if (key === 'mkfile') showMkfileModal.value = true
