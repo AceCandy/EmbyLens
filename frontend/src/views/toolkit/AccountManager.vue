@@ -31,10 +31,10 @@
                 <n-card title="修改管理员密码" size="small" segmented style="height: 100%">
                   <n-form size="medium">
                     <n-form-item label="旧密码">
-                      <n-input v-model:value="pwdForm.old_password" type="password" show-password-on="mousedown" placeholder="请输入当前密码" />
+                      <n-input v-model:value="pwdForm.old_password" type="password" show-password-on="click" placeholder="请输入当前密码" />
                     </n-form-item>
                     <n-form-item label="新密码">
-                      <n-input v-model:value="pwdForm.new_password" type="password" show-password-on="mousedown" placeholder="请输入新密码" />
+                      <n-input v-model:value="pwdForm.new_password" type="password" show-password-on="click" placeholder="请输入新密码" />
                     </n-form-item>
                     <n-button type="primary" block @click="handleChangePassword">
                       确认修改密码

@@ -20,10 +20,12 @@
                       <n-input-group>
                         <n-input 
                           v-model:value="config.api_token" 
-                          type="password" 
-                          show-password-on="mousedown" 
+                          :type="showFullToken ? 'text' : 'password'"
+                          show-password-on="click" 
                           placeholder="尚未设置 Token"
                           readonly
+                          @click="showFullToken = !showFullToken"
+                          style="cursor: pointer"
                         />
                         <n-button type="primary" @click="copyToken" :disabled="!config.api_token">复制</n-button>
                         <n-button secondary @click="generateNewToken">重新生成</n-button>

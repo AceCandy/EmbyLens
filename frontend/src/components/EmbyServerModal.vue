@@ -18,7 +18,7 @@
           <n-input v-model:value="form.url" placeholder="http://1.2.3.4:8096" />
         </n-form-item-gi>
         <n-form-item-gi label="管理级 API Key">
-          <n-input v-model:value="form.api_key" type="password" show-password-on="mousedown" />
+          <n-input v-model:value="form.api_key" type="password" show-password-on="click" />
         </n-form-item-gi>
         <n-form-item-gi label="用户 ID (User ID)">
           <n-input v-model:value="form.user_id" placeholder="可选，由系统自动识别" />
@@ -31,7 +31,7 @@
           <n-input v-model:value="form.username" placeholder="管理员用户名" />
         </n-form-item-gi>
         <n-form-item-gi label="Emby 密码">
-          <n-input v-model:value="form.password" type="password" show-password-on="mousedown" />
+          <n-input v-model:value="form.password" type="password" show-password-on="click" />
         </n-form-item-gi>
       </n-grid>
       <n-form-item label="会话令牌 (Session Token)">

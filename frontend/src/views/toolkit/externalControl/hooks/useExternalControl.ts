@@ -10,6 +10,7 @@ export function useExternalControl() {
   const showLogDetail = ref(false)
   const currentPayload = ref('')
   const activeTab = ref('api_key')
+  const showFullToken = ref(false)
 
   const pagination = reactive({
     page: 1,
@@ -73,7 +74,7 @@ export function useExternalControl() {
   const handlePageSizeChange = (pageSize: number) => { pagination.pageSize = pageSize; pagination.page = 1; fetchLogs() }
 
   return {
-    config, auditLogs, loadingLogs, pagination, showLogDetail, currentPayload, activeTab,
+    config, auditLogs, loadingLogs, pagination, showLogDetail, currentPayload, activeTab, showFullToken,
     loadConfig, saveSettings, generateNewToken, copyToken, fetchLogs, handlePageChange, handlePageSizeChange
   }
 }

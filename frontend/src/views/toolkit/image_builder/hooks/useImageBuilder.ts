@@ -38,11 +38,6 @@ export function useImageBuilder() {
       
       const hosts = Array.isArray(hostData) ? hostData : []
       hostOptions.value = hosts.map((h: any) => ({ label: h.name, value: h.id }))
-      
-      // 如果后端没返回任何主机（防御性），前端补全 Local
-      if (hostOptions.value.length === 0) {
-        hostOptions.value = [{ label: 'Local Host (本容器)', value: 'local' }]
-      }
     } catch (e) {
       console.error('Fetch image builder options failed:', e)
     }

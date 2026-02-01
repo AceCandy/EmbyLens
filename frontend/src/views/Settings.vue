@@ -65,10 +65,16 @@
               </template>
               <n-form label-placement="left" label-width="140" size="small">
                 <n-form-item label="TMDB API Key">
-                  <n-input v-model:value="globalConfig.tmdb_api_key" type="password" show-password-on="mousedown" placeholder="The Movie Database V3 Key" />
+                  <n-input-group>
+                    <n-input v-model:value="globalConfig.tmdb_api_key" type="password" show-password-on="click" placeholder="The Movie Database V3 Key" />
+                    <n-button secondary @click="handleCopy(globalConfig.tmdb_api_key)">复制</n-button>
+                  </n-input-group>
                 </n-form-item>
                 <n-form-item label="Bangumi API Token">
-                  <n-input v-model:value="globalConfig.bangumi_api_token" type="password" show-password-on="mousedown" placeholder="Bangumi Access Token" />
+                  <n-input-group>
+                    <n-input v-model:value="globalConfig.bangumi_api_token" type="password" show-password-on="click" placeholder="Bangumi Access Token" />
+                    <n-button secondary @click="handleCopy(globalConfig.bangumi_api_token)">复制</n-button>
+                  </n-input-group>
                 </n-form-item>
               </n-form>
               <template #action>
@@ -183,7 +189,7 @@ import {
   SaveAsOutlined as BackupIcon
 } from '@vicons/material'
 import { servers, activeServerId } from '../store/serverStore'
-import { copyElementContent } from '../utils/clipboard'
+import { copyElementContent, copyText } from '../utils/clipboard'
 import EmbyServerModal from '../components/EmbyServerModal.vue'
 
 // 导入提取的逻辑
@@ -212,6 +218,14 @@ const copyConfig = () => {
   const selector = document.querySelector('.debug-code-wrapper pre') ? '.debug-code-wrapper pre' : '.debug-code-wrapper'
   if (copyElementContent(selector)) {
     message.info('配置快照已复制')
+  } else {
+    message.error('复制失败')
+  }
+}
+
+const handleCopy = async (text: string) => {
+  if (await copyText(text)) {
+    message.success('已成功复制到剪贴板')
   } else {
     message.error('复制失败')
   }

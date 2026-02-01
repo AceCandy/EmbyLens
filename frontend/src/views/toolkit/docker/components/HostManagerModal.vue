@@ -31,7 +31,7 @@
       <n-form-item label="SSH 地址"><n-input v-model:value="editHostForm.ssh_host" placeholder="127.0.0.1" /></n-form-item>
       <n-form-item label="SSH 端口"><n-input-number v-model:value="editHostForm.ssh_port" style="width: 100%" /></n-form-item>
       <n-form-item label="SSH 用户"><n-input v-model:value="editHostForm.ssh_user" /></n-form-item>
-      <n-form-item label="SSH 密码"><n-input v-model:value="editHostForm.ssh_pass" type="password" show-password-on="mousedown" /></n-form-item>
+      <n-form-item label="SSH 密码"><n-input v-model:value="editHostForm.ssh_pass" type="password" show-password-on="click" /></n-form-item>
       <n-form-item label="宿主机标记">
         <n-space align="center">
           <n-switch v-model:value="editHostForm.is_local" />

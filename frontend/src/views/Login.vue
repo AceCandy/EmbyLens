@@ -22,7 +22,7 @@
             <n-input
               v-model:value="formValue.password"
               type="password"
-              show-password-on="mousedown"
+              show-password-on="click"
               placeholder="密码"
               @keyup.enter="handleLogin"
             >
