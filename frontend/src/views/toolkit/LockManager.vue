@@ -88,12 +88,6 @@
         <!-- 右侧：辅助信息区 -->
         <n-gi span="24 m:8">
           <n-space vertical size="large">
-            <n-card title="调试 Payload 快照" size="small" segmented>
-              <div class="debug-code-wrapper">
-                <n-code :code="debugPayload" language="json" word-wrap />
-              </div>
-            </n-card>
-
             <n-card title="概念区分" size="small" segmented>
               <n-text depth="3">
                 <b>主锁 (LockData):</b><br/>

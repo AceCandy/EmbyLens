@@ -111,7 +111,7 @@
           </n-space>
         </n-gi>
 
-        <!-- 右侧：维护与快照 -->
+        <!-- 右侧：维护与提示 -->
         <n-gi span="24 m:8">
           <n-space vertical size="large">
             <!-- 4. 配置备份与恢复 -->
@@ -141,21 +141,11 @@
               </n-space>
             </n-card>
 
-            <!-- 5. 调试：全局配置快照 -->
-            <n-card title="实时配置快照 (JSON)" size="small" segmented>
-              <template #header-extra>
-                <n-button quaternary size="tiny" @click="copyConfig">复制</n-button>
-              </template>
-              <div class="debug-code-wrapper">
-                <n-code :code="JSON.stringify(globalConfig, null, 2)" language="json" word-wrap />
-              </div>
-            </n-card>
-
             <n-card title="配置贴士" size="small" segmented>
-              <n-text depth="3" style="font-size: 13px">
-                - &lt;b&gt;TMDB&lt;/b&gt;：元数据抓取的核心，建议配置 V3 Key.&lt;br/&gt;
-                - &lt;b&gt;代理&lt;/b&gt;：如果您无法连接外网，请在此配置 HTTP/SOCKS 代理。&lt;br/&gt;
-                - &lt;b&gt;多服务器&lt;/b&gt;：Lens 支持管理多个 Emby，您可以随时切换当前激活的服务器。
+              <n-text depth="3" style="font-size: 13px; line-height: 1.8">
+                <div style="margin-bottom: 8px">• <b>TMDB</b>：元数据抓取的核心，建议配置 V3 Key。</div>
+                <div style="margin-bottom: 8px">• <b>代理</b>：如果您无法连接外网，请在此配置 HTTP/SOCKS 代理。</div>
+                <div>• <b>多服务器</b>：Lens 支持多实例管理，您可以随时切换当前激活的服务器。</div>
               </n-text>
             </n-card>
           </n-space>
@@ -214,15 +204,6 @@ const openEditModal = (s: any) => {
   showServerModal.value = true
 }
 
-const copyConfig = () => {
-  const selector = document.querySelector('.debug-code-wrapper pre') ? '.debug-code-wrapper pre' : '.debug-code-wrapper'
-  if (copyElementContent(selector)) {
-    message.info('配置快照已复制')
-  } else {
-    message.error('复制失败')
-  }
-}
-
 const handleCopy = async (text: string) => {
   if (await copyText(text)) {
     message.success('已成功复制到剪贴板')
@@ -233,12 +214,6 @@ const handleCopy = async (text: string) => {
 </script>
 
 <style scoped>
-.debug-code-wrapper { 
-  background-color: rgba(0, 0, 0, 0.3); 
-  padding: 12px; 
-  border-radius: 8px; 
-  border: 1px solid var(--border-color); 
-}
 .active-row {
   background-color: rgba(var(--primary-color-rgb), 0.1);
 }

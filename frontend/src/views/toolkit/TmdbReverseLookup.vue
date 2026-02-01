@@ -46,10 +46,6 @@
         <!-- 右侧：辅助信息区 -->
         <n-gi span="24 m:8">
           <n-space vertical size="large">
-            <n-card title="溯源逻辑" size="small" segmented>
-              <n-code :code="`# 流程解析:\n# 1. GET /Items/${episodeId || 'ID'} -> 提取 SeriesId\n# 2. GET /Items/{SeriesId} -> 提取 ProviderIds.Tmdb`" language="bash" />
-            </n-card>
-
             <n-card title="使用说明" size="small" segmented>
               <n-text depth="3">
                 1. 单集 ID 是指具体某一集在 Emby 中的唯一标识。<br/>

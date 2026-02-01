@@ -39,14 +39,6 @@
         <!-- 右侧：辅助信息区 -->
         <n-gi span="24 m:8">
           <n-space vertical size="large">
-            <n-card title="调试信息" size="small" segmented>
-              <n-p depth="3" style="margin-bottom: 8px">后端端点:</n-p>
-              <n-code :code="`GET /api/items/info?item_id=${itemId || 'xxx'}`" language="bash" />
-              <n-p depth="3" style="margin-top: 16px">
-                该工具直接调用 Emby 的 <code>/Items/{id}</code> 接口，返回的结果是经过后端透传的原始数据。
-              </n-p>
-            </n-card>
-
             <n-card title="使用说明" size="small" segmented>
               <n-text depth="3">
                 1. 在 Emby Web 端的地址栏中可以找到项目 ID。<br/>
