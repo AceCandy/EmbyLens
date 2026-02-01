@@ -58,8 +58,14 @@
           <template #feedback>开启后，系统将每日凌晨 03:00 检查并自动升级该容器镜像。</template>
         </n-form-item>
         <n-space justify="end">
-          <n-button @click="showSettingsModal = false">取消</n-button>
-          <n-button type="primary" @click="saveSettings">保存</n-button>
+          <n-button @click="showSettingsModal = false">
+            <template #icon><n-icon><CloseIcon /></n-icon></template>
+            取消
+          </n-button>
+          <n-button type="primary" @click="saveSettings">
+            <template #icon><n-icon><SaveIcon /></n-icon></template>
+            保存设置
+          </n-button>
         </n-space>
       </n-space>
     </n-modal>
@@ -89,7 +95,9 @@ import {
   AutorenewOutlined as RefreshIcon,
   SystemUpdateAltOutlined as UpdateIcon,
   SearchOutlined as SearchIcon,
-  UpdateOutlined as AutoModeIcon
+  UpdateOutlined as AutoModeIcon,
+  CloseOutlined as CloseIcon,
+  SaveOutlined as SaveIcon
 } from '@vicons/material'
 import axios from 'axios'
 import type { DataTableColumns } from 'naive-ui'

@@ -21,7 +21,10 @@
     <template #footer>
       <n-space justify="space-between" align="center">
         <n-text depth="3" style="word-break: break-all; max-width: 300px">{{ currentPath }}</n-text>
-        <n-button type="primary" @click="confirmPath">确认选择</n-button>
+        <n-button type="primary" @click="confirmPath">
+          <template #icon><n-icon><CheckIcon /></n-icon></template>
+          确认选择
+        </n-button>
       </n-space>
     </template>
   </n-modal>
@@ -30,8 +33,9 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import { 
-  NModal, NBreadcrumb, NBreadcrumbItem, NList, NListItem, NSpace, NText, NButton, useMessage 
+  NModal, NBreadcrumb, NBreadcrumbItem, NList, NListItem, NSpace, NText, NButton, NIcon, useMessage 
 } from 'naive-ui'
+import { CheckCircleOutlined as CheckIcon } from '@vicons/material'
 import axios from 'axios'
 
 const props = defineProps<{

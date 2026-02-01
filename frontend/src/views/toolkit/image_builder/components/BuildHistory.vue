@@ -16,13 +16,26 @@
           <pre>{{ currentLog }}</pre>
         </div>
       </div>
+      <template #footer>
+        <n-space justify="end">
+          <n-button type="primary" @click="showLog = false">
+            <template #icon><n-icon><CloseIcon /></n-icon></template>
+            关闭
+          </n-button>
+        </n-space>
+      </template>
     </n-modal>
   </n-modal>
 </template>
 
 <script setup lang="ts">
 import { ref, watch, h } from 'vue'
-import { NModal, NDataTable, NButton, NSpace, NTag, useMessage, useDialog } from 'naive-ui'
+import { NModal, NDataTable, NButton, NSpace, NTag, NIcon, useMessage, useDialog } from 'naive-ui'
+import {
+  TerminalOutlined as LogIcon,
+  DeleteOutlined as DeleteIcon,
+  CloseOutlined as CloseIcon
+} from '@vicons/material'
 import axios from 'axios'
 
 const props = defineProps<{
@@ -32,6 +45,10 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits(['update:show'])
+
+const renderIcon = (icon: any) => {
+  return () => h(NIcon, null, { default: () => h(icon) })
+}
 
 const show = ref(false)
 const tasks = ref([])
@@ -89,8 +106,22 @@ const columns = [
     render(row: any) {
       return h(NSpace, null, {
         default: () => [
-          h(NButton, { size: 'small', onClick: () => viewLog(row.id) }, { default: () => '查看日志' }),
-          h(NButton, { size: 'small', type: 'error', ghost: true, onClick: () => deleteLog(row.id) }, { default: () => '删除' })
+          h(NButton, { 
+            size: 'small', 
+            onClick: () => viewLog(row.id) 
+          }, { 
+            icon: renderIcon(LogIcon),
+            default: () => '查看日志' 
+          }),
+          h(NButton, { 
+            size: 'small', 
+            type: 'error', 
+            ghost: true, 
+            onClick: () => deleteLog(row.id) 
+          }, { 
+            icon: renderIcon(DeleteIcon),
+            default: () => '删除' 
+          })
         ]
       })
     }
@@ -141,7 +172,7 @@ const deleteLog = (taskId: string) => {
 
 <style scoped>
 .log-container-wrapper {
-  height: calc(96vh - 120px); /* 减去 Header 和 Padding 的高度 */
+  height: calc(96vh - 180px); /* 减去 Header, Footer 和 Padding 的高度 */
   overflow: hidden;
 }
 

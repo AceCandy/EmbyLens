@@ -2,10 +2,19 @@
   <div class="project-list">
     <n-space vertical>
       <n-space justify="space-between">
-        <n-button type="primary" @click="openCreateModal">新建项目</n-button>
+        <n-button type="primary" @click="openCreateModal">
+          <template #icon><n-icon><AddIcon /></n-icon></template>
+          新建项目
+        </n-button>
         <n-space>
-          <n-button @click="fetchProjects">刷新列表</n-button>
-          <n-button type="error" ghost @click="handleClearAllLogs">清空所有记录</n-button>
+          <n-button @click="fetchProjects">
+            <template #icon><n-icon><RefreshIcon /></n-icon></template>
+            刷新列表
+          </n-button>
+          <n-button type="error" ghost @click="handleClearAllLogs">
+            <template #icon><n-icon><ClearIcon /></n-icon></template>
+            清空所有记录
+          </n-button>
         </n-space>
       </n-space>
 
@@ -65,8 +74,14 @@
         </n-form-item>
 
         <n-space justify="end">
-          <n-button @click="showModal = false">取消</n-button>
-          <n-button type="primary" @click="saveProject">保存</n-button>
+          <n-button @click="showModal = false">
+            <template #icon><n-icon><CloseIcon /></n-icon></template>
+            取消
+          </n-button>
+          <n-button type="primary" @click="saveProject">
+            <template #icon><n-icon><SaveIcon /></n-icon></template>
+            保存项目
+          </n-button>
         </n-space>
       </n-form>
     </n-modal>
@@ -84,8 +99,19 @@
 import { ref, onMounted, h } from 'vue'
 import {
   NSpace, NButton, NDataTable, NModal, NForm, NFormItem, NInput, NSelect,
-  NCheckbox, useMessage, useDialog, NTag, NCheckboxGroup, NInputGroup
+  NCheckbox, useMessage, useDialog, NTag, NCheckboxGroup, NInputGroup, NIcon
 } from 'naive-ui'
+import { 
+  AddOutlined as AddIcon,
+  RefreshOutlined as RefreshIcon,
+  DeleteSweepOutlined as ClearIcon,
+  PlayArrowOutlined as BuildIcon,
+  HistoryOutlined as HistoryIcon,
+  EditOutlined as EditIcon,
+  DeleteOutlined as DeleteIcon,
+  SaveOutlined as SaveIcon,
+  CloseOutlined as CloseIcon
+} from '@vicons/material'
 import { imageBuilderApi } from '@/api/imageBuilder'
 import BuildHistory from './BuildHistory.vue'
 
@@ -94,6 +120,10 @@ import { useImageBuilder } from '../hooks/useImageBuilder'
 
 const message = useMessage()
 const dialog = useDialog()
+
+const renderIcon = (icon: any) => {
+  return () => h(NIcon, null, { default: () => h(icon) })
+}
 
 const {
   projects, registries, hostOptions, proxyOptions, registryOptions, loading, projectTags,
@@ -130,7 +160,7 @@ const columns = [
   {
     title: '操作',
     key: 'actions',
-    width: 420,
+    width: 440,
     fixed: 'right',
     render(row: any) {
       if (!projectTags[row.id]) projectTags[row.id] = 'latest'
@@ -139,15 +169,42 @@ const columns = [
           h(NInputGroup, null, {
             default: () => [
               h(NInput, {
-                size: 'small', value: projectTags[row.id], placeholder: 'Tag', style: { width: '100px' },
+                size: 'small', value: projectTags[row.id], placeholder: 'Tag', style: { width: '80px' },
                 'onUpdate:value': (v) => { projectTags[row.id] = v }
               }),
-              h(NButton, { size: 'small', type: 'primary', onClick: () => directBuild(row) }, { default: () => '构建' })
+              h(NButton, { 
+                size: 'small', 
+                type: 'primary', 
+                onClick: () => directBuild(row)
+              }, { 
+                icon: renderIcon(BuildIcon),
+                default: () => '立即构建' 
+              })
             ]
           }),
-          h(NButton, { size: 'small', onClick: () => openHistory(row) }, { default: () => '历史' }),
-          h(NButton, { size: 'small', onClick: () => openEditModal(row) }, { default: () => '编辑' }),
-          h(NButton, { size: 'small', type: 'error', ghost: true, onClick: () => deleteProject(row) }, { default: () => '删除' }),
+          h(NButton, { 
+            size: 'small', 
+            onClick: () => openHistory(row)
+          }, { 
+            icon: renderIcon(HistoryIcon),
+            default: () => '查看历史' 
+          }),
+          h(NButton, { 
+            size: 'small', 
+            onClick: () => openEditModal(row)
+          }, { 
+            icon: renderIcon(EditIcon),
+            default: () => '修改' 
+          }),
+          h(NButton, { 
+            size: 'small', 
+            type: 'error', 
+            ghost: true, 
+            onClick: () => deleteProject(row)
+          }, { 
+            icon: renderIcon(DeleteIcon),
+            default: () => '删除' 
+          }),
         ]
       })
     }

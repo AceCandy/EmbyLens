@@ -4,7 +4,10 @@
       <n-gi>
         <n-card title="仓库配置" size="small">
           <template #header-extra>
-            <n-button size="small" type="primary" @click="openRegistryModal()">添加仓库</n-button>
+            <n-button size="small" type="primary" @click="openRegistryModal()">
+              <template #icon><n-icon><AddIcon /></n-icon></template>
+              添加仓库
+            </n-button>
           </template>
           <n-data-table :columns="registryColumns" :data="registries" size="small" />
         </n-card>
@@ -12,7 +15,10 @@
       <n-gi>
         <n-card title="凭据管理" size="small">
           <template #header-extra>
-            <n-button size="small" type="primary" @click="openCredModal()">添加凭据</n-button>
+            <n-button size="small" type="primary" @click="openCredModal()">
+              <template #icon><n-icon><AddIcon /></n-icon></template>
+              添加凭据
+            </n-button>
           </template>
           <n-data-table :columns="credColumns" :data="credentials" size="small" />
         </n-card>
@@ -35,8 +41,14 @@
           <n-select v-model:value="registryForm.credential_id" :options="credOptions" clearable />
         </n-form-item>
         <n-space justify="end">
-          <n-button @click="showRegistryModal = false">取消</n-button>
-          <n-button type="primary" @click="saveRegistry">保存</n-button>
+          <n-button @click="showRegistryModal = false">
+            <template #icon><n-icon><CloseIcon /></n-icon></template>
+            取消
+          </n-button>
+          <n-button type="primary" @click="saveRegistry">
+            <template #icon><n-icon><SaveIcon /></n-icon></template>
+            保存
+          </n-button>
         </n-space>
       </n-form>
     </n-modal>
@@ -54,8 +66,14 @@
           <n-input v-model:value="credForm.password" placeholder="请输入密码或仓库 Token" />
         </n-form-item>
         <n-space justify="end">
-          <n-button @click="showCredModal = false">取消</n-button>
-          <n-button type="primary" @click="saveCredential">保存</n-button>
+          <n-button @click="showCredModal = false">
+            <template #icon><n-icon><CloseIcon /></n-icon></template>
+            取消
+          </n-button>
+          <n-button type="primary" @click="saveCredential">
+            <template #icon><n-icon><SaveIcon /></n-icon></template>
+            保存
+          </n-button>
         </n-space>
       </n-form>
     </n-modal>
@@ -66,12 +84,24 @@
 import { ref, onMounted, h } from 'vue'
 import { 
   NGrid, NGi, NCard, NButton, NDataTable, NModal, NForm, NFormItem, 
-  NInput, NSelect, NSwitch, NSpace, useMessage, useDialog 
+  NInput, NSelect, NSwitch, NSpace, useMessage, useDialog, NIcon 
 } from 'naive-ui'
+import {
+  AddOutlined as AddIcon,
+  EditOutlined as EditIcon,
+  DeleteOutlined as DeleteIcon,
+  SaveOutlined as SaveIcon,
+  CloseOutlined as CloseIcon,
+  SensorsOutlined as TestIcon
+} from '@vicons/material'
 import axios from 'axios'
 
 const message = useMessage()
 const dialog = useDialog()
+
+const renderIcon = (icon: any) => {
+  return () => h(NIcon, null, { default: () => h(icon) })
+}
 
 const registries = ref([])
 const credentials = ref([])
@@ -113,9 +143,26 @@ const registryColumns = [
             ghost: true,
             loading: testingId.value === row.id,
             onClick: () => testRegistry(row) 
-          }, { default: () => '测试' }),
-          h(NButton, { size: 'small', onClick: () => openRegistryModal(row) }, { default: () => '编辑' }),
-          h(NButton, { size: 'small', type: 'error', ghost: true, onClick: () => deleteRegistry(row.id) }, { default: () => '删除' })
+          }, { 
+            icon: renderIcon(TestIcon),
+            default: () => '测试' 
+          }),
+          h(NButton, { 
+            size: 'small', 
+            onClick: () => openRegistryModal(row) 
+          }, { 
+            icon: renderIcon(EditIcon),
+            default: () => '编辑' 
+          }),
+          h(NButton, { 
+            size: 'small', 
+            type: 'error', 
+            ghost: true, 
+            onClick: () => deleteRegistry(row.id) 
+          }, { 
+            icon: renderIcon(DeleteIcon),
+            default: () => '删除' 
+          })
         ]
       })
     }
@@ -131,8 +178,22 @@ const credColumns = [
     render(row: any) {
       return h(NSpace, { size: 'small' }, {
         default: () => [
-          h(NButton, { size: 'small', onClick: () => openCredModal(row) }, { default: () => '编辑' }),
-          h(NButton, { size: 'small', type: 'error', ghost: true, onClick: () => deleteCredential(row.id) }, { default: () => '删除' })
+          h(NButton, { 
+            size: 'small', 
+            onClick: () => openCredModal(row) 
+          }, { 
+            icon: renderIcon(EditIcon),
+            default: () => '编辑' 
+          }),
+          h(NButton, { 
+            size: 'small', 
+            type: 'error', 
+            ghost: true, 
+            onClick: () => deleteCredential(row.id) 
+          }, { 
+            icon: renderIcon(DeleteIcon),
+            default: () => '删除' 
+          })
         ]
       })
     }

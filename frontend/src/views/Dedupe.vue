@@ -31,9 +31,11 @@
               规则设置
             </n-button>
             <n-button type="primary" secondary :loading="syncing" @click="syncMedia">
+              <template #icon><n-icon><SyncIcon /></n-icon></template>
               从 Emby 同步
             </n-button>
             <n-button v-if="selectedIds.length > 0" type="error" @click="showConfirm = true">
+              <template #icon><n-icon><DeleteIcon /></n-icon></template>
               手动删除选中 ({{ selectedIds.length }})
             </n-button>
           </n-space>
@@ -63,7 +65,13 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import { NCard, NSpace, NButton, NIcon, NInput, NInputGroup, NCheckbox, NDataTable, NH2, NText, useMessage } from 'naive-ui'
-import { SearchOutlined as SearchIcon, SettingsOutlined as SettingsIcon, AutoFixHighOutlined as AutoIcon } from '@vicons/material'
+import { 
+  SearchOutlined as SearchIcon, 
+  SettingsOutlined as SettingsIcon, 
+  AutoFixHighOutlined as AutoIcon,
+  SyncOutlined as SyncIcon,
+  DeleteOutlined as DeleteIcon
+} from '@vicons/material'
 
 import { getColumns } from './toolkit/dedupe/columns'
 import { useDedupe } from './toolkit/dedupe/useDedupe'

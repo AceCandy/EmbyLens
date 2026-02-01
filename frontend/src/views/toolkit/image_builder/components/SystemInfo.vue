@@ -66,7 +66,10 @@
           <n-select v-model:value="selectedProxyId" :options="proxyOptions" placeholder="不使用代理" clearable style="width: 200px" size="small" />
         </n-space>
         <n-space justify="center" size="large">
-          <n-button @click="fetchInfo" :loading="loading" secondary type="primary">手动刷新环境状态</n-button>
+          <n-button @click="fetchInfo" :loading="loading" secondary type="primary">
+            <template #icon><n-icon><RefreshIcon /></n-icon></template>
+            手动刷新环境状态
+          </n-button>
           <n-button @click="handleRepair" :loading="fixing" type="warning" ghost>
             <template #icon>
               <n-icon><RepairIcon /></n-icon>
@@ -83,14 +86,14 @@
 import { ref, onMounted } from 'vue'
 import {
   NGrid, NGi, NCard, NDescriptions, NDescriptionsItem,
-  NText, NSpace, NButton, NEmpty, NSelect, NTag, NIcon
+  NText, NSpace, NButton, NEmpty, NSelect, NTag, NIcon, useMessage, useDialog
 } from 'naive-ui'
 import {
   CheckCircleOutlined as CheckIcon,
-  BuildCircleOutlined as RepairIcon
+  BuildCircleOutlined as RepairIcon,
+  RefreshOutlined as RefreshIcon
 } from '@vicons/material'
 import axios from 'axios'
-import { useMessage, useDialog } from 'naive-ui'
 
 const message = useMessage()
 const dialog = useDialog()

@@ -2,8 +2,14 @@
   <n-card size="small" segmented title="备份任务">
     <template #header-extra>
       <n-space>
-        <n-button type="primary" size="small" @click="$emit('add')">新增任务</n-button>
-        <n-button size="small" @click="fetchTasks">刷新</n-button>
+        <n-button type="primary" size="small" @click="$emit('add')">
+          <template #icon><n-icon><AddIcon /></n-icon></template>
+          新增任务
+        </n-button>
+        <n-button size="small" @click="fetchTasks">
+          <template #icon><n-icon><RefreshIcon /></n-icon></template>
+          刷新
+        </n-button>
       </n-space>
     </template>
     
@@ -18,12 +24,24 @@
 
 <script setup lang="ts">
 import { ref, h, onMounted } from 'vue'
-import { NCard, NSpace, NButton, NDataTable, NTag, useMessage, useDialog } from 'naive-ui'
+import { NCard, NSpace, NButton, NDataTable, NTag, NIcon, NText, useMessage, useDialog } from 'naive-ui'
+import {
+  AddOutlined as AddIcon,
+  RefreshOutlined as RefreshIcon,
+  PlayArrowOutlined as PlayIcon,
+  HistoryOutlined as HistoryIcon,
+  EditOutlined as EditIcon,
+  DeleteOutlined as DeleteIcon
+} from '@vicons/material'
 import axios from 'axios'
 
 const emit = defineEmits(['add', 'edit', 'run', 'view-history'])
 const message = useMessage()
 const dialog = useDialog()
+
+const renderIcon = (icon: any) => {
+  return () => h(NIcon, null, { default: () => h(icon) })
+}
 
 const tasks = ref([])
 const loading = ref(false)
@@ -40,14 +58,13 @@ const formatSchedule = (row: any) => {
   
   if (row.schedule_type === 'cron') {
     const cron = row.schedule_value || ''
-    // 匹配每天: "m h * * *"
     const dailyMatch = cron.match(/^(\d+)\s+(\d+)\s+\*\s+\*\s+\*$/)
     if (dailyMatch) {
       const m = dailyMatch[1].padStart(2, '0')
       const h = dailyMatch[2].padStart(2, '0')
       return `每天 ${h}:${m}`
     }
-    return cron // 复杂的 cron 保持原样
+    return cron
   }
   return row.schedule_value
 }
@@ -97,12 +114,33 @@ const columns = [
   { 
     title: '操作', 
     key: 'actions',
+    width: 320,
     render: (row) => h(NSpace, {}, {
       default: () => [
-        h(NButton, { size: 'tiny', secondary: true, type: 'primary', onClick: () => emit('run', row) }, { default: () => '立即执行' }),
-        h(NButton, { size: 'tiny', secondary: true, onClick: () => emit('view-history', row) }, { default: () => '历史' }),
-        h(NButton, { size: 'tiny', onClick: () => emit('edit', row) }, { default: () => '编辑' }),
-        h(NButton, { size: 'tiny', type: 'error', ghost: true, onClick: () => handleDeleteTask(row) }, { default: () => '删除' })
+        h(NButton, { 
+          size: 'tiny', secondary: true, type: 'primary', onClick: () => emit('run', row)
+        }, { 
+          icon: renderIcon(PlayIcon),
+          default: () => '执行' 
+        }),
+        h(NButton, { 
+          size: 'tiny', secondary: true, onClick: () => emit('view-history', row)
+        }, { 
+          icon: renderIcon(HistoryIcon),
+          default: () => '历史' 
+        }),
+        h(NButton, { 
+          size: 'tiny', onClick: () => emit('edit', row)
+        }, { 
+          icon: renderIcon(EditIcon),
+          default: () => '编辑' 
+        }),
+        h(NButton, { 
+          size: 'tiny', type: 'error', ghost: true, onClick: () => handleDeleteTask(row)
+        }, { 
+          icon: renderIcon(DeleteIcon),
+          default: () => '删除' 
+        })
       ]
     })
   }
@@ -135,8 +173,4 @@ const handleDeleteTask = (row) => {
 defineExpose({ fetchTasks })
 
 onMounted(fetchTasks)
-</script>
-
-<script lang="ts">
-import { NText } from 'naive-ui'
 </script>

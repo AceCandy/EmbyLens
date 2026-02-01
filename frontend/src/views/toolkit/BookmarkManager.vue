@@ -170,7 +170,10 @@
         <n-form-item label="书签链接">
           <n-input-group>
             <n-input v-model:value="form.url" placeholder="https://..." @blur="autoFetchTitle" />
-            <n-button type="primary" secondary @click="autoFetchIcon" :loading="fetchingIcon">抓取</n-button>
+            <n-button type="primary" secondary @click="autoFetchIcon" :loading="fetchingIcon">
+              <template #icon><n-icon><SyncIcon /></n-icon></template>
+              抓取
+            </n-button>
           </n-input-group>
         </n-form-item>
         <n-form-item label="显示名称">
@@ -182,8 +185,14 @@
       </n-form>
       <template #footer>
         <n-space justify="end">
-          <n-button @click="showAddBookmarkModal = false">取消</n-button>
-          <n-button type="primary" :disabled="!form.title" @click="saveBookmark">保存书签</n-button>
+          <n-button @click="showAddBookmarkModal = false">
+            <template #icon><n-icon><CloseIcon /></n-icon></template>
+            取消
+          </n-button>
+          <n-button type="primary" :disabled="!form.title" @click="saveBookmark">
+            <template #icon><n-icon><SaveIcon /></n-icon></template>
+            保存书签
+          </n-button>
         </n-space>
       </template>
     </n-modal>
@@ -196,8 +205,14 @@
       </n-form>
       <template #footer>
         <n-space justify="end">
-          <n-button @click="showAddFolder = false">取消</n-button>
-          <n-button type="primary" :disabled="!folderName" @click="saveFolder">立即创建</n-button>
+          <n-button @click="showAddFolder = false">
+            <template #icon><n-icon><CloseIcon /></n-icon></template>
+            取消
+          </n-button>
+          <n-button type="primary" :disabled="!folderName" @click="saveFolder">
+            <template #icon><n-icon><AddIcon /></n-icon></template>
+            立即创建
+          </n-button>
         </n-space>
       </template>
     </n-modal>
@@ -240,7 +255,9 @@ import {
   DeleteSweepOutlined as ClearIcon,
   SearchOutlined as SearchIcon,
   MedicalServicesOutlined as HealthIcon,
-  ScienceOutlined as LabIcon
+  ScienceOutlined as LabIcon,
+  SaveOutlined as SaveIcon,
+  SyncOutlined as SyncIcon
 } from '@vicons/material'
 import { useBookmarkManager } from './bookmark/useBookmarkManager'
 import BookmarkHealthModal from './bookmark/components/BookmarkHealthModal.vue'

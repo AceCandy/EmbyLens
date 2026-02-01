@@ -10,10 +10,11 @@
                 @click="showRepairModal = true" 
                 :loading="installing"
               >
+                <template #icon><n-icon><RepairIcon /></n-icon></template>
                 一键修复/安装
               </n-button>
               <n-button size="tiny" quaternary @click="fetchInfo" :loading="loading">
-                <template #icon><n-icon><refresh-icon /></n-icon></template>
+                <template #icon><n-icon><RefreshIcon /></n-icon></template>
                 重新检测
               </n-button>
             </n-space>
@@ -44,6 +45,7 @@
                     @click="handleServiceAction('start')"
                     :loading="actionLoading === 'start'"
                   >
+                    <template #icon><n-icon><StartIcon /></n-icon></template>
                     启动
                   </n-button>
                   <n-button 
@@ -52,6 +54,7 @@
                     @click="handleServiceAction('stop')"
                     :loading="actionLoading === 'stop'"
                   >
+                    <template #icon><n-icon><StopIcon /></n-icon></template>
                     停止
                   </n-button>
                   <n-button 
@@ -59,6 +62,7 @@
                     @click="handleServiceAction('restart')"
                     :loading="actionLoading === 'restart'"
                   >
+                    <template #icon><n-icon><RecreateIcon /></n-icon></template>
                     重启
                   </n-button>
                 </n-button-group>
@@ -101,8 +105,14 @@
       </n-form>
       <template #footer>
         <n-space justify="end">
-          <n-button @click="showRepairModal = false">取消</n-button>
-          <n-button type="primary" @click="handleRepair" :loading="installing">开始执行</n-button>
+          <n-button @click="showRepairModal = false">
+            <template #icon><n-icon><CloseIcon /></n-icon></template>
+            取消
+          </n-button>
+          <n-button type="primary" @click="handleRepair" :loading="installing">
+            <template #icon><n-icon><SaveIcon /></n-icon></template>
+            开始执行
+          </n-button>
         </n-space>
       </template>
     </n-modal>
@@ -121,7 +131,15 @@
 <script setup lang="ts">
 import { ref, watch, reactive } from 'vue'
 import { NGrid, NGi, NCard, NDescriptions, NDescriptionsItem, NTag, NBadge, NSkeleton, NButton, NIcon, NAlert, NSpace, NModal, useMessage, useDialog, NForm, NFormItem, NInput, NSwitch, NButtonGroup } from 'naive-ui'
-import { RefreshOutlined as RefreshIcon } from '@vicons/material'
+import { 
+  RefreshOutlined as RefreshIcon,
+  BuildOutlined as RepairIcon,
+  PlayArrowOutlined as StartIcon,
+  StopOutlined as StopIcon,
+  AutorenewOutlined as RecreateIcon,
+  CloseOutlined as CloseIcon,
+  CheckCircleOutlined as SaveIcon
+} from '@vicons/material'
 import axios from 'axios'
 
 const props = defineProps<{ hostId: string | null }>()

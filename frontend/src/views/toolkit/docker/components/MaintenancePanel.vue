@@ -5,9 +5,12 @@
         <n-card title="Docker Daemon 配置" size="small">
           <template #header-extra>
             <n-space align="center">
-              <n-button size="tiny" quaternary type="primary" @click="openRawEdit">直接编辑 JSON</n-button>
+              <n-button size="tiny" quaternary type="primary" @click="openRawEdit">
+                <template #icon><n-icon><CodeIcon /></n-icon></template>
+                直接编辑 JSON
+              </n-button>
               <n-text depth="3" type="warning" style="font-size: 12px">
-                <n-icon><warning-icon /></n-icon> 需要 Root 权限的 SSH 账户
+                <n-icon><WarningIcon /></n-icon> 需要 Root 权限的 SSH 账户
               </n-text>
             </n-space>
           </template>
@@ -111,6 +114,7 @@
             </n-grid>
             <n-space justify="end" style="margin-top: 12px">
               <n-button type="primary" :loading="loading.daemon" @click="handleSaveDaemonConfig">
+                <template #icon><n-icon><SaveIcon /></n-icon></template>
                 保存并应用配置
               </n-button>
             </n-space>
@@ -131,6 +135,7 @@
               </n-checkbox>
             </n-space>
             <n-button type="primary" secondary :loading="loading.images" @click="handlePruneImages">
+              <template #icon><n-icon><DeleteIcon /></n-icon></template>
               开始清理镜像
             </n-button>
           </n-space>
@@ -143,6 +148,7 @@
             <n-text depth="3">清理 Docker Buildx 或 BuildKit 的构建缓存。</n-text>
             <div style="height: 24px"></div> <!-- 保持高度对齐 -->
             <n-button type="warning" secondary :loading="loading.cache" @click="handlePruneCache">
+              <template #icon><n-icon><DeleteIcon /></n-icon></template>
               开始清理构建缓存
             </n-button>
           </n-space>
@@ -152,9 +158,10 @@
       <n-gi>
         <n-card title="容器清理" size="small">
           <n-space vertical size="large">
-            <n-text depth="3">清理所有处于停止状态的 Docker 容器。</n-text>
+            <n-text depth="3">清理所有处于停止状态 de Docker 容器。</n-text>
             <div style="height: 24px"></div> <!-- 保持高度对齐 -->
             <n-button type="error" secondary :loading="loading.containers" @click="handlePruneContainers">
+              <template #icon><n-icon><DeleteIcon /></n-icon></template>
               开始清理停止的容器
             </n-button>
           </n-space>
@@ -195,8 +202,12 @@
       </n-space>
       <template #footer>
         <n-space justify="end">
-          <n-button @click="showRawModal = false">取消</n-button>
+          <n-button @click="showRawModal = false">
+            <template #icon><n-icon><CloseIcon /></n-icon></template>
+            取消
+          </n-button>
           <n-button type="primary" :disabled="!!rawJsonError" @click="handleSaveRawJson" :loading="loading.daemon">
+            <template #icon><n-icon><SaveIcon /></n-icon></template>
             保存原始配置
           </n-button>
         </n-space>
@@ -208,7 +219,13 @@
 <script setup lang="ts">
 import { ref, onMounted, watch, h } from 'vue'
 import { NGrid, NGi, NCard, NSpace, NText, NCheckbox, NSwitch, NButton, NModal, NForm, NFormItem, NInput, NInputNumber, NAlert, NIcon, useMessage, useDialog, NTag } from 'naive-ui'
-import { WarningAmberOutlined as WarningIcon } from '@vicons/material'
+import { 
+  WarningAmberOutlined as WarningIcon,
+  CodeOutlined as CodeIcon,
+  SaveOutlined as SaveIcon,
+  DeleteOutlined as DeleteIcon,
+  CloseOutlined as CloseIcon
+} from '@vicons/material'
 import axios from 'axios'
 
 const props = defineProps({

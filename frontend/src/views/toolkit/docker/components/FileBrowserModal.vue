@@ -25,17 +25,22 @@
           
           <template #suffix>
             <n-space>
-              <n-button size="small" secondary @click.stop="openPermissionModal(item)">权限/属性</n-button>
+              <n-button size="small" secondary @click.stop="openPermissionModal(item)">
+                <template #icon><n-icon><LockIcon /></n-icon></template>
+                权限/属性
+              </n-button>
               <n-button 
                 v-if="item.is_dir && isSelected(item.path)"
                 size="small" type="error" quaternary @click.stop="$emit('remove', item.path)"
               >
+                <template #icon><n-icon><CancelIcon /></n-icon></template>
                 取消扫描
               </n-button>
               <n-button 
                 v-else-if="item.is_dir"
                 size="small" type="primary" quaternary @click.stop="$emit('select', item.path)"
               >
+                <template #icon><n-icon><ScanIcon /></n-icon></template>
                 设为扫描路径
               </n-button>
 
@@ -43,10 +48,14 @@
                 v-if="item.is_dir"
                 size="small" type="info" quaternary @click.stop="createBackup(item)"
               >
+                <template #icon><n-icon><BackupIcon /></n-icon></template>
                 设为SSH备份
               </n-button>
 
-              <n-button v-if="!item.is_dir" size="small" tertiary @click.stop="viewFile(item.path)">查看</n-button>
+              <n-button v-if="!item.is_dir" size="small" tertiary @click.stop="viewFile(item.path)">
+                <template #icon><n-icon><ViewIcon /></n-icon></template>
+                查看
+              </n-button>
             </n-space>
           </template>
         </n-list-item>
@@ -103,14 +112,30 @@
       </n-form-item>
     </n-form>
     <template #action>
-      <n-button @click="showPermissionModal = false">取消</n-button>
-      <n-button type="primary" @click="submitPermissions">确定应用</n-button>
+      <n-space justify="end">
+        <n-button @click="showPermissionModal = false">
+          <template #icon><n-icon><CloseIcon /></n-icon></template>
+          取消
+        </n-button>
+        <n-button type="primary" @click="submitPermissions">
+          <template #icon><n-icon><SaveIcon /></n-icon></template>
+          确定应用
+        </n-button>
+      </n-space>
     </template>
   </n-modal>
 
   <!-- 文件查看弹窗 -->
   <n-modal v-model:show="showFileContent" preset="card" :title="'查看文件: ' + viewingFileName" style="width: 80vw">
     <pre class="file-viewer">{{ fileContent }}</pre>
+    <template #footer>
+      <n-space justify="end">
+        <n-button type="primary" @click="showFileContent = false">
+          <template #icon><n-icon><CloseIcon /></n-icon></template>
+          关闭
+        </n-button>
+      </n-space>
+    </template>
   </n-modal>
 </template>
 
@@ -122,7 +147,14 @@ import {
 } from 'naive-ui'
 import { 
   FolderOutlined as FolderIcon,
-  InsertDriveFileOutlined as FileIcon
+  InsertDriveFileOutlined as FileIcon,
+  SecurityOutlined as LockIcon,
+  SearchOutlined as ViewIcon,
+  ManageSearchOutlined as ScanIcon,
+  CloudUploadOutlined as BackupIcon,
+  CancelOutlined as CancelIcon,
+  SaveOutlined as SaveIcon,
+  CloseOutlined as CloseIcon
 } from '@vicons/material'
 import axios from 'axios'
 
@@ -250,7 +282,7 @@ const submitPermissions = async () => {
     message.success('属性更新成功')
     showPermissionModal.value = false
   } catch (e) {
-    message.error('更新失败: ' + (e.response?.data?.detail || '未知错误'))
+    message.error('更新失败: ' + (e.response?.data?.detail || e.message))
   }
 }
 

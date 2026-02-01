@@ -2,8 +2,14 @@
   <n-modal :show="show" @update:show="$emit('update:show', $event)" preset="card" title="管理 PostgreSQL 主机" style="width: 650px">
     <n-space vertical size="large">
       <n-space justify="space-between">
-        <n-button type="primary" @click="handleAdd">添加新主机</n-button>
-        <n-button @click="fetchHosts">刷新</n-button>
+        <n-button type="primary" @click="handleAdd">
+          <template #icon><n-icon><AddIcon /></n-icon></template>
+          添加新主机
+        </n-button>
+        <n-button @click="fetchHosts">
+          <template #icon><n-icon><RefreshIcon /></n-icon></template>
+          刷新
+        </n-button>
       </n-space>
       
       <n-data-table :columns="columns" :data="hosts" />
@@ -39,9 +45,18 @@
       </n-form>
       <template #footer>
         <n-space justify="end">
-          <n-button @click="showAdd = false">取消</n-button>
-          <n-button type="warning" @click="handleTest" :loading="testing">测试连接</n-button>
-          <n-button type="primary" @click="handleSave">{{ editingHostId ? '保存修改' : '保存主机' }}</n-button>
+          <n-button @click="showAdd = false">
+            <template #icon><n-icon><CloseIcon /></n-icon></template>
+            取消
+          </n-button>
+          <n-button type="warning" @click="handleTest" :loading="testing">
+            <template #icon><n-icon><TestIcon /></n-icon></template>
+            测试连接
+          </n-button>
+          <n-button type="primary" @click="handleSave">
+            <template #icon><n-icon><SaveIcon /></n-icon></template>
+            {{ editingHostId ? '保存修改' : '保存主机' }}
+          </n-button>
         </n-space>
       </template>
     </n-modal>
@@ -50,7 +65,16 @@
 
 <script setup lang="ts">
 import { ref, reactive, h, onMounted } from 'vue'
-import { NModal, NSpace, NButton, NDataTable, NForm, NFormItem, NInput, NInputNumber, NGrid, NGi, useMessage, useDialog } from 'naive-ui'
+import { NModal, NSpace, NButton, NDataTable, NForm, NFormItem, NInput, NInputNumber, NGrid, NGi, useMessage, useDialog, NIcon } from 'naive-ui'
+import {
+  AddOutlined as AddIcon,
+  RefreshOutlined as RefreshIcon,
+  EditOutlined as EditIcon,
+  DeleteOutlined as DeleteIcon,
+  SaveOutlined as SaveIcon,
+  CloseOutlined as CloseIcon,
+  SensorsOutlined as TestIcon
+} from '@vicons/material'
 import axios from 'axios'
 
 defineProps<{ show: boolean }>()
@@ -58,6 +82,10 @@ const emit = defineEmits(['update:show', 'refresh'])
 
 const message = useMessage()
 const dialog = useDialog()
+
+const renderIcon = (icon: any) => {
+  return () => h(NIcon, null, { default: () => h(icon) })
+}
 
 const hosts = ref<any[]>([])
 const showAdd = ref(false)
@@ -97,12 +125,18 @@ const columns = [
           h(
             NButton, 
             { size: 'small', type: 'primary', ghost: true, onClick: () => handleEdit(row) }, 
-            { default: () => '编辑' }
+            { 
+              icon: renderIcon(EditIcon),
+              default: () => '编辑' 
+            }
           ),
           h(
             NButton, 
             { size: 'small', type: 'error', ghost: true, onClick: () => handleDelete(row.id) }, 
-            { default: () => '移除' }
+            { 
+              icon: renderIcon(DeleteIcon),
+              default: () => '移除' 
+            }
           )
         ]
       }

@@ -2,7 +2,10 @@
   <div class="proxy-manager">
     <n-card title="构建代理设置" size="small">
       <template #header-extra>
-        <n-button size="small" type="primary" @click="openModal()">添加代理</n-button>
+        <n-button size="small" type="primary" @click="openModal()">
+          <template #icon><n-icon><AddIcon /></n-icon></template>
+          添加代理
+        </n-button>
       </template>
       <n-text depth="3">配置 HTTP/HTTPS 代理，用于在构建过程中加速下载基础镜像或依赖包。</n-text>
       <div style="margin-top: 12px">
@@ -25,8 +28,14 @@
           <n-input v-model:value="form.password" type="password" show-password-on="click" placeholder="可选" />
         </n-form-item>
         <n-space justify="end">
-          <n-button @click="showModal = false">取消</n-button>
-          <n-button type="primary" @click="saveProxy">保存</n-button>
+          <n-button @click="showModal = false">
+            <template #icon><n-icon><CloseIcon /></n-icon></template>
+            取消
+          </n-button>
+          <n-button type="primary" @click="saveProxy">
+            <template #icon><n-icon><SaveIcon /></n-icon></template>
+            保存
+          </n-button>
         </n-space>
       </n-form>
     </n-modal>
@@ -37,12 +46,23 @@
 import { ref, onMounted, h } from 'vue'
 import { 
   NCard, NButton, NDataTable, NModal, NForm, NFormItem, 
-  NInput, NSpace, NText, useMessage, useDialog 
+  NInput, NSpace, NText, useMessage, useDialog, NIcon 
 } from 'naive-ui'
+import {
+  AddOutlined as AddIcon,
+  EditOutlined as EditIcon,
+  DeleteOutlined as DeleteIcon,
+  SaveOutlined as SaveIcon,
+  CloseOutlined as CloseIcon
+} from '@vicons/material'
 import axios from 'axios'
 
 const message = useMessage()
 const dialog = useDialog()
+
+const renderIcon = (icon: any) => {
+  return () => h(NIcon, null, { default: () => h(icon) })
+}
 
 const proxies = ref([])
 const showModal = ref(false)
@@ -65,8 +85,22 @@ const columns = [
     render(row: any) {
       return h(NSpace, { size: 'small' }, {
         default: () => [
-          h(NButton, { size: 'small', onClick: () => openModal(row) }, { default: () => '编辑' }),
-          h(NButton, { size: 'small', type: 'error', ghost: true, onClick: () => deleteProxy(row.id) }, { default: () => '删除' })
+          h(NButton, { 
+            size: 'small', 
+            onClick: () => openModal(row) 
+          }, { 
+            icon: renderIcon(EditIcon),
+            default: () => '编辑' 
+          }),
+          h(NButton, { 
+            size: 'small', 
+            type: 'error', 
+            ghost: true, 
+            onClick: () => deleteProxy(row.id) 
+          }, { 
+            icon: renderIcon(DeleteIcon),
+            default: () => '删除' 
+          })
         ]
       })
     }

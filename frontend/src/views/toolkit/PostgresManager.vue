@@ -17,10 +17,14 @@
                 style="width: 220px"
                 @update:value="handleHostChange"
               />
-              <n-button type="primary" secondary @click="showHostModal = true">管理主机</n-button>
+              <n-button type="primary" secondary @click="showHostModal = true">
+                <template #icon><n-icon><ServerIcon /></n-icon></template>
+                管理主机
+              </n-button>
             </n-space>
             <n-space>
               <n-button :disabled="!selectedHost" ghost @click="refreshAll" :loading="refreshing">
+                <template #icon><n-icon><RefreshIcon /></n-icon></template>
                 全部刷新
               </n-button>
             </n-space>
@@ -57,7 +61,11 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { NSpace, NCard, NText, NButton, NSelect, NTabs, NTabPane, useMessage } from 'naive-ui'
+import { NSpace, NCard, NText, NButton, NSelect, NTabs, NTabPane, useMessage, NIcon, NH2 } from 'naive-ui'
+import { 
+  DnsOutlined as ServerIcon,
+  RefreshOutlined as RefreshIcon
+} from '@vicons/material'
 
 // 导入乐高组件
 import TableBrowserPanel from './pgsql/components/TableBrowserPanel.vue'

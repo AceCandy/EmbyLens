@@ -42,9 +42,16 @@
         <div class="ml-auto flex items-center gap-2 pl-4 border-l border-white/10">
           <n-tooltip trigger="hover">
             <template #trigger>
-              <button @click="router.push('/toolkit/bookmark-manager')" class="p-1.5 rounded-lg hover:bg-white/10 text-gray-400 hover:text-white transition-colors">
-                <span class="i-mdi-bookmark-edit-outline text-lg"></span>
-              </button>
+              <n-button 
+                quaternary 
+                circle 
+                size="small"
+                @click="router.push('/toolkit/bookmark-manager')"
+              >
+                <template #icon>
+                  <n-icon><EditIcon /></n-icon>
+                </template>
+              </n-button>
             </template>
             管理书签
           </n-tooltip>
@@ -57,7 +64,8 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, h } from 'vue'
 import { useRouter } from 'vue-router'
-import { NDropdown, NTooltip } from 'naive-ui'
+import { NDropdown, NTooltip, NButton, NIcon } from 'naive-ui'
+import { BookmarkEditOutlined as EditIcon } from '@vicons/material'
 import { useBookmark, type Bookmark } from '../useBookmark'
 
 const router = useRouter()

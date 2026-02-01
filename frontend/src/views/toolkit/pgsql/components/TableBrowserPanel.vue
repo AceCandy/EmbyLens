@@ -34,7 +34,10 @@
             <n-text strong style="font-size: 16px">{{ selectedTable }}</n-text>
             <n-tag size="small" type="info">{{ pagination.itemCount }} 条记录</n-tag>
           </n-space>
-          <n-button size="small" @click="fetchTableData" :loading="loading">刷新数据</n-button>
+          <n-button size="small" @click="fetchTableData" :loading="loading">
+            <template #icon><n-icon><RefreshIcon /></n-icon></template>
+            刷新数据
+          </n-button>
         </n-space>
         <n-data-table
           flex-height remote
@@ -59,12 +62,20 @@
 <script setup lang="ts">
 import { ref, reactive, computed, watch, h } from 'vue'
 import { NLayout, NLayoutSider, NLayoutContent, NMenu, NDataTable, NEmpty, NSpace, NIcon, NText, NTag, NButton, NSelect, NEllipsis, useMessage } from 'naive-ui'
-import { TableChartOutlined as TableIcon, RefreshOutlined as RefreshIcon } from '@vicons/material'
+import { 
+  TableChartOutlined as TableIcon, 
+  RefreshOutlined as RefreshIcon,
+  SearchOutlined as SearchIcon
+} from '@vicons/material'
 import axios from 'axios'
 import DataValueViewerModal from './DataValueViewerModal.vue'
 
 const props = defineProps<{ host: any }>()
 const message = useMessage()
+
+const renderIcon = (icon: any) => {
+  return () => h(NIcon, null, { default: () => h(icon) })
+}
 
 const dbList = ref<string[]>([])
 const currentDb = ref<string | null>(null)
@@ -182,7 +193,8 @@ const fetchTableData = async () => {
               onClick: () => openViewer(col.name, val)
             },
             { 
-              default: () => isObject ? '查看 JSON' : '查看长文本'
+              icon: renderIcon(SearchIcon),
+              default: () => isObject ? '查看 JSON' : '查看详情'
             }
           )
         }

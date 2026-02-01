@@ -37,6 +37,7 @@
                       <n-input v-model:value="pwdForm.new_password" type="password" show-password-on="click" placeholder="请输入新密码" />
                     </n-form-item>
                     <n-button type="primary" block @click="handleChangePassword">
+                      <template #icon><n-icon><LockIcon /></n-icon></template>
                       确认修改密码
                     </n-button>
                   </n-form>
@@ -58,6 +59,7 @@
                     <div v-if="!authInfo.is_otp_enabled">
                       <div v-if="!otpSetup.qr_code">
                         <n-button block type="primary" @click="setupOtp">
+                          <template #icon><n-icon><SecurityIcon /></n-icon></template>
                           开始设置 2FA
                         </n-button>
                       </div>
@@ -68,9 +70,15 @@
                         </div>
                         <n-input-group>
                           <n-input v-model:value="otpSetup.code" placeholder="6 位验证码" maxlength="6" />
-                          <n-button type="primary" @click="enableOtp">绑定</n-button>
+                          <n-button type="primary" @click="enableOtp">
+                            <template #icon><n-icon><LinkIcon /></n-icon></template>
+                            绑定
+                          </n-button>
                         </n-input-group>
-                        <n-button text @click="otpSetup.qr_code = ''" style="margin-top: 10px;">返回</n-button>
+                        <n-button text @click="otpSetup.qr_code = ''" style="margin-top: 10px;">
+                          <template #icon><n-icon><BackIcon /></n-icon></template>
+                          返回
+                        </n-button>
                       </div>
                     </div>
                     
@@ -82,6 +90,7 @@
                       type="error" 
                       secondary
                     >
+                      <template #icon><n-icon><ShieldOffIcon /></n-icon></template>
                       停用双重验证 (2FA)
                     </n-button>
                   </n-space>
@@ -122,8 +131,15 @@
 import { onMounted } from 'vue'
 import { 
   NSpace, NH2, NText, NCard, NForm, NFormItem, 
-  NInput, NButton, NGrid, NGi, NAlert, NInputGroup, NSwitch, NThing
+  NInput, NButton, NGrid, NGi, NAlert, NInputGroup, NSwitch, NThing, NIcon
 } from 'naive-ui'
+import {
+  LockOutlined as LockIcon,
+  SecurityOutlined as SecurityIcon,
+  LinkOutlined as LinkIcon,
+  ArrowBackOutlined as BackIcon,
+  ShieldMoonOutlined as ShieldOffIcon
+} from '@vicons/material'
 
 // 导入提取的逻辑
 import { useAuthManager } from './auth/hooks/useAuthManager'

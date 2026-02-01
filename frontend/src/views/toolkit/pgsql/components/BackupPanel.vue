@@ -2,8 +2,14 @@
   <n-space vertical>
     <n-space justify="space-between" align="center">
       <n-space>
-        <n-button type="primary" @click="openCreateModal" :disabled="!host">创建新备份</n-button>
-        <n-button @click="fetchBackups" :loading="loading">刷新列表</n-button>
+        <n-button type="primary" @click="openCreateModal" :disabled="!host">
+          <template #icon><n-icon><BackupIcon /></n-icon></template>
+          创建新备份
+        </n-button>
+        <n-button @click="fetchBackups" :loading="loading">
+          <template #icon><n-icon><RefreshIcon /></n-icon></template>
+          刷新列表
+        </n-button>
       </n-space>
       <n-alert type="info" size="small" :show-icon="false">
         备份文件存储在 data/backups/pg 目录下
@@ -28,8 +34,14 @@
       </n-form>
       <template #footer>
         <n-space justify="end">
-          <n-button @click="showCreateModal = false">取消</n-button>
-          <n-button type="primary" @click="handleCreateBackup" :loading="actionLoading">开始备份</n-button>
+          <n-button @click="showCreateModal = false">
+            <template #icon><n-icon><CloseIcon /></n-icon></template>
+            取消
+          </n-button>
+          <n-button type="primary" @click="handleCreateBackup" :loading="actionLoading">
+            <template #icon><n-icon><BackupIcon /></n-icon></template>
+            开始备份
+          </n-button>
         </n-space>
       </template>
     </n-modal>
@@ -54,8 +66,14 @@
       </n-form>
       <template #footer>
         <n-space justify="end">
-          <n-button @click="showRestoreModal = false">取消</n-button>
-          <n-button type="error" @click="handleRestore" :loading="actionLoading">确认还原</n-button>
+          <n-button @click="showRestoreModal = false">
+            <template #icon><n-icon><CloseIcon /></n-icon></template>
+            取消
+          </n-button>
+          <n-button type="error" @click="handleRestore" :loading="actionLoading">
+            <template #icon><n-icon><HistoryIcon /></n-icon></template>
+            确认还原
+          </n-button>
         </n-space>
       </template>
     </n-modal>
@@ -66,13 +84,24 @@
 import { ref, watch, h, computed } from 'vue'
 import { 
   NSpace, NButton, NDataTable, NModal, NForm, NFormItem, NSelect, 
-  useMessage, useDialog, NAlert, NP, NText 
+  useMessage, useDialog, NAlert, NP, NText, NIcon 
 } from 'naive-ui'
+import {
+  BackupOutlined as BackupIcon,
+  RefreshOutlined as RefreshIcon,
+  RestoreOutlined as HistoryIcon,
+  DeleteOutlined as DeleteIcon,
+  CloseOutlined as CloseIcon
+} from '@vicons/material'
 import axios from 'axios'
 
 const props = defineProps<{ host: any }>()
 const message = useMessage()
 const dialog = useDialog()
+
+const renderIcon = (icon: any) => {
+  return () => h(NIcon, null, { default: () => h(icon) })
+}
 
 const backupList = ref<any[]>([])
 const dbList = ref<any[]>([])
@@ -120,7 +149,7 @@ const columns = [
   {
     title: '操作',
     key: 'actions',
-    width: 150,
+    width: 220,
     render: (row: any) => h(NSpace, {}, {
       default: () => [
         h(NButton, {
@@ -128,13 +157,19 @@ const columns = [
           type: 'warning',
           secondary: true,
           onClick: () => openRestoreModal(row)
-        }, { default: () => '还原' }),
+        }, { 
+          icon: renderIcon(HistoryIcon),
+          default: () => '还原' 
+        }),
         h(NButton, {
           size: 'small',
           type: 'error',
           ghost: true,
           onClick: () => handleDelete(row.filename)
-        }, { default: () => '删除' })
+        }, { 
+          icon: renderIcon(DeleteIcon),
+          default: () => '删除' 
+        })
       ]
     })
   }

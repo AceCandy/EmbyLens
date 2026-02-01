@@ -1,7 +1,10 @@
 <template>
   <n-card size="small" segmented title="执行历史">
     <template #header-extra>
-      <n-button size="small" @click="fetchHistory">刷新</n-button>
+      <n-button size="small" @click="fetchHistory">
+        <template #icon><n-icon><RefreshIcon /></n-icon></template>
+        刷新
+      </n-button>
     </template>
     <n-data-table
       :columns="historyColumns"
@@ -15,7 +18,8 @@
 
 <script setup lang="ts">
 import { ref, h, onMounted, onUnmounted } from 'vue'
-import { NCard, NDataTable, NTag, NButton } from 'naive-ui'
+import { NCard, NDataTable, NTag, NButton, NIcon } from 'naive-ui'
+import { RefreshOutlined as RefreshIcon } from '@vicons/material'
 import axios from 'axios'
 
 const history = ref([])

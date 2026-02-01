@@ -16,7 +16,10 @@
                 placeholder="选择 Docker 主机"
                 style="width: 220px"
               />
-              <n-button type="primary" secondary @click="showHostModal = true">管理主机</n-button>
+              <n-button type="primary" secondary @click="showHostModal = true">
+                <template #icon><n-icon><ServerIcon /></n-icon></template>
+                管理主机
+              </n-button>
               
               <!-- 全局扫描范围展示 -->
               <n-space size="small" align="center" v-if="selectedHostId" style="max-width: 500px">
@@ -34,9 +37,18 @@
             </n-space>
             
             <n-space>
-              <n-button type="warning" ghost @click="openAutoUpdateModal">计划设置</n-button>
-              <n-button type="info" ghost @click="showBrowserModal = true" :disabled="!selectedHostId" v-if="activeTab === 'compose'">文件夹浏览器</n-button>
-              <n-button type="info" ghost @click="refreshAll" :loading="refreshing">全部刷新</n-button>
+              <n-button type="warning" ghost @click="openAutoUpdateModal">
+                <template #icon><n-icon><SettingsIcon /></n-icon></template>
+                计划设置
+              </n-button>
+              <n-button type="info" ghost @click="showBrowserModal = true" :disabled="!selectedHostId" v-if="activeTab === 'compose'">
+                <template #icon><n-icon><FolderIcon /></n-icon></template>
+                文件夹浏览器
+              </n-button>
+              <n-button type="info" ghost @click="refreshAll" :loading="refreshing">
+                <template #icon><n-icon><RefreshIcon /></n-icon></template>
+                全部刷新
+              </n-button>
             </n-space>
           </n-space>
         </template>
@@ -125,8 +137,14 @@
         </n-form-item>
 
         <n-space justify="end" style="margin-top: 20px">
-          <n-button @click="showAutoUpdateModal = false">取消</n-button>
-          <n-button type="primary" :loading="savingAutoUpdate" @click="saveAutoUpdateSettings">保存并生效</n-button>
+          <n-button @click="showAutoUpdateModal = false">
+            <template #icon><n-icon><CloseIcon /></n-icon></template>
+            取消
+          </n-button>
+          <n-button type="primary" :loading="savingAutoUpdate" @click="saveAutoUpdateSettings">
+            <template #icon><n-icon><SaveIcon /></n-icon></template>
+            保存并生效
+          </n-button>
         </n-space>
       </n-space>
     </n-modal>
@@ -138,8 +156,16 @@ import { ref, onMounted } from 'vue'
 import { 
   NSpace, NCard, NText, NSelect, NButton, NTag, NTabs, NTabPane, 
   useMessage, useDialog, NH2, NModal, NFormItem, NRadioGroup, 
-  NRadioButton, NSwitch, NAlert, NTimePicker, NGrid, NFormItemGi, NInputNumber 
+  NRadioButton, NSwitch, NAlert, NTimePicker, NGrid, NFormItemGi, NInputNumber, NIcon
 } from 'naive-ui'
+import {
+  DnsOutlined as ServerIcon,
+  SettingsOutlined as SettingsIcon,
+  FolderOpenOutlined as FolderIcon,
+  RefreshOutlined as RefreshIcon,
+  SaveOutlined as SaveIcon,
+  CloseOutlined as CloseIcon
+} from '@vicons/material'
 
 // 导入乐高组件
 import ContainerPanel from './docker/components/ContainerPanel.vue'

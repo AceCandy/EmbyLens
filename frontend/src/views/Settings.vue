@@ -38,11 +38,20 @@
                     </td>
                     <td>
                       <n-space>
-                        <n-button size="tiny" secondary @click="openEditModal(s)">配置</n-button>
-                        <n-button v-if="s.id !== activeServerId" size="tiny" type="primary" secondary @click="handleActivate(s.id)">激活</n-button>
+                        <n-button size="tiny" secondary @click="openEditModal(s)">
+                          <template #icon><n-icon><EditIcon /></n-icon></template>
+                          配置
+                        </n-button>
+                        <n-button v-if="s.id !== activeServerId" size="tiny" type="primary" secondary @click="handleActivate(s.id)">
+                          <template #icon><n-icon><CheckIcon /></n-icon></template>
+                          激活
+                        </n-button>
                         <n-popconfirm @positive-click="handleDelete(s.id)" positive-text="确认" negative-text="取消">
                           <template #trigger>
-                            <n-button size="tiny" type="error" quaternary>删除</n-button>
+                            <n-button size="tiny" type="error" quaternary>
+                              <template #icon><n-icon><DeleteIcon /></n-icon></template>
+                              删除
+                            </n-button>
                           </template>
                           确定删除？
                         </n-popconfirm>
@@ -67,19 +76,28 @@
                 <n-form-item label="TMDB API Key">
                   <n-input-group>
                     <n-input v-model:value="globalConfig.tmdb_api_key" type="password" show-password-on="click" placeholder="The Movie Database V3 Key" />
-                    <n-button secondary @click="handleCopy(globalConfig.tmdb_api_key)">复制</n-button>
+                    <n-button secondary @click="handleCopy(globalConfig.tmdb_api_key)">
+                      <template #icon><n-icon><CopyIcon /></n-icon></template>
+                      复制
+                    </n-button>
                   </n-input-group>
                 </n-form-item>
                 <n-form-item label="Bangumi API Token">
                   <n-input-group>
                     <n-input v-model:value="globalConfig.bangumi_api_token" type="password" show-password-on="click" placeholder="Bangumi Access Token" />
-                    <n-button secondary @click="handleCopy(globalConfig.bangumi_api_token)">复制</n-button>
+                    <n-button secondary @click="handleCopy(globalConfig.bangumi_api_token)">
+                      <template #icon><n-icon><CopyIcon /></n-icon></template>
+                      复制
+                    </n-button>
                   </n-input-group>
                 </n-form-item>
               </n-form>
               <template #action>
                 <n-space justify="end">
-                  <n-button type="primary" size="small" @click="handleSaveGlobal" :loading="savingGlobal">保存 API 配置</n-button>
+                  <n-button type="primary" size="small" @click="handleSaveGlobal" :loading="savingGlobal">
+                    <template #icon><n-icon><SaveIcon /></n-icon></template>
+                    保存 API 配置
+                  </n-button>
                 </n-space>
               </template>
             </n-card>
@@ -104,7 +122,10 @@
               </n-form>
               <template #action>
                 <n-space justify="end">
-                  <n-button type="primary" size="small" @click="handleSaveGlobal" :loading="savingGlobal">保存代理配置</n-button>
+                  <n-button type="primary" size="small" @click="handleSaveGlobal" :loading="savingGlobal">
+                    <template #icon><n-icon><SaveIcon /></n-icon></template>
+                    保存代理配置
+                  </n-button>
                 </n-space>
               </template>
             </n-card>
@@ -176,7 +197,12 @@ import {
   AddOutlined as AddIcon,
   CloudDownloadOutlined as ExportIcon,
   CloudUploadOutlined as ImportIcon,
-  SaveAsOutlined as BackupIcon
+  SaveAsOutlined as BackupIcon,
+  EditOutlined as EditIcon,
+  CheckCircleOutlined as CheckIcon,
+  DeleteOutlined as DeleteIcon,
+  ContentCopyOutlined as CopyIcon,
+  SaveOutlined as SaveIcon
 } from '@vicons/material'
 import { servers, activeServerId } from '../store/serverStore'
 import { copyElementContent, copyText } from '../utils/clipboard'

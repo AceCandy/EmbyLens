@@ -12,7 +12,8 @@
 
 <script setup lang="ts">
 import { ref, h, watch } from 'vue'
-import { NModal, NDataTable, NTag, NButton, NSpace, NRadio, NRadioGroup, NText, useMessage, useDialog } from 'naive-ui'
+import { NModal, NDataTable, NTag, NButton, NSpace, NRadio, NRadioGroup, NText, NIcon, useMessage, useDialog } from 'naive-ui'
+import { RestoreOutlined as HistoryIcon } from '@vicons/material'
 import axios from 'axios'
 
 const props = defineProps<{
@@ -24,6 +25,10 @@ const props = defineProps<{
 const emit = defineEmits(['update:show'])
 const message = useMessage()
 const dialog = useDialog()
+
+const renderIcon = (icon: any) => {
+  return () => h(NIcon, null, { default: () => h(icon) })
+}
 
 const history = ref([])
 const loading = ref(false)
@@ -53,7 +58,10 @@ const columns = [
         type: 'warning', 
         secondary: true,
         onClick: () => handleRestore(row)
-      }, { default: () => '还原' })
+      }, { 
+        icon: renderIcon(HistoryIcon),
+        default: () => '还原' 
+      })
     }
   }
 ]

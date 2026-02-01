@@ -1,7 +1,10 @@
 <template>
   <n-modal v-model:show="show" preset="card" title="Docker 主机管理" style="width: 600px">
     <n-space vertical>
-      <n-button type="primary" block @click="handleAddHost">添加新主机</n-button>
+      <n-button type="primary" block @click="handleAddHost">
+        <template #icon><n-icon><AddIcon /></n-icon></template>
+        添加新主机
+      </n-button>
       <n-list bordered>
         <n-list-item v-for="host in hosts" :key="host.id">
           <n-space justify="space-between" align="center">
@@ -11,9 +14,18 @@
               <n-tag v-if="host.is_local" size="small" type="success" style="margin-left: 8px" quaternary>宿主机 (系统升级)</n-tag>
             </div>
             <n-space>
-              <n-button size="small" @click="testConnection(host.id)">测试</n-button>
-              <n-button size="small" @click="handleEditHost(host)">编辑</n-button>
-              <n-button size="small" type="error" ghost @click="deleteHost(host.id)">删除</n-button>
+              <n-button size="small" @click="testConnection(host.id)">
+                <template #icon><n-icon><TestIcon /></n-icon></template>
+                测试
+              </n-button>
+              <n-button size="small" @click="handleEditHost(host)">
+                <template #icon><n-icon><EditIcon /></n-icon></template>
+                编辑
+              </n-button>
+              <n-button size="small" type="error" ghost @click="deleteHost(host.id)">
+                <template #icon><n-icon><DeleteIcon /></n-icon></template>
+                删除
+              </n-button>
             </n-space>
           </n-space>
         </n-list-item>
@@ -24,6 +36,7 @@
   <!-- 编辑弹窗 -->
   <n-modal v-model:show="showEditModal" preset="card" :title="editHostForm.id ? '编辑主机' : '添加主机'" style="width: 500px">
     <n-form :model="editHostForm" label-placement="left" label-width="100">
+      <!-- ... (表单项保持不变) ... -->
       <n-form-item label="名称"><n-input v-model:value="editHostForm.name" /></n-form-item>
       <n-form-item label="连接类型">
         <n-select v-model:value="editHostForm.type" :options="[{ label: '远程 Docker (SSH)', value: 'ssh' }]" />
@@ -40,8 +53,14 @@
       </n-form-item>
       <n-form-item label="扫描路径"><n-input v-model:value="editHostForm.compose_scan_paths" type="textarea" placeholder="逗号分隔" /></n-form-item>
       <n-space justify="end">
-        <n-button @click="showEditModal = false">取消</n-button>
-        <n-button type="primary" @click="saveHost">保存</n-button>
+        <n-button @click="showEditModal = false">
+          <template #icon><n-icon><CloseIcon /></n-icon></template>
+          取消
+        </n-button>
+        <n-button type="primary" @click="saveHost">
+          <template #icon><n-icon><SaveIcon /></n-icon></template>
+          保存
+        </n-button>
       </n-space>
     </n-form>
   </n-modal>
@@ -51,8 +70,16 @@
 import { ref, watch } from 'vue'
 import { 
   NModal, NSpace, NButton, NList, NListItem, NText, NTag, 
-  NForm, NFormItem, NInput, NInputNumber, NSelect, NSwitch, useMessage 
+  NForm, NFormItem, NInput, NInputNumber, NSelect, NSwitch, useMessage, NIcon 
 } from 'naive-ui'
+import {
+  AddOutlined as AddIcon,
+  SensorsOutlined as TestIcon,
+  EditOutlined as EditIcon,
+  DeleteOutlined as DeleteIcon,
+  SaveOutlined as SaveIcon,
+  CloseOutlined as CloseIcon
+} from '@vicons/material'
 import axios from 'axios'
 
 const props = defineProps<{

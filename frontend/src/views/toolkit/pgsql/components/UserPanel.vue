@@ -1,8 +1,14 @@
 <template>
   <n-space vertical>
     <n-space justify="space-between" align="center">
-      <n-button type="primary" @click="showCreateModal = true">创建用户</n-button>
-      <n-button @click="fetchUsers" :loading="loading">刷新列表</n-button>
+      <n-button type="primary" @click="showCreateModal = true">
+        <template #icon><n-icon><AddIcon /></n-icon></template>
+        创建用户
+      </n-button>
+      <n-button @click="fetchUsers" :loading="loading">
+        <template #icon><n-icon><RefreshIcon /></n-icon></template>
+        刷新列表
+      </n-button>
     </n-space>
     <n-data-table :columns="columns" :data="userList" :loading="loading" />
 
@@ -32,8 +38,14 @@
       </n-form>
       <template #footer>
         <n-space justify="end">
-          <n-button @click="showCreateModal = false">取消</n-button>
-          <n-button type="primary" @click="handleCreate" :loading="creating">创建角色</n-button>
+          <n-button @click="showCreateModal = false">
+            <template #icon><n-icon><CloseIcon /></n-icon></template>
+            取消
+          </n-button>
+          <n-button type="primary" @click="handleCreate" :loading="creating">
+            <template #icon><n-icon><AddIcon /></n-icon></template>
+            创建角色
+          </n-button>
         </n-space>
       </template>
     </n-modal>
@@ -63,8 +75,14 @@
       </n-form>
       <template #footer>
         <n-space justify="end">
-          <n-button @click="showEditModal = false">取消</n-button>
-          <n-button type="primary" @click="handleUpdate" :loading="updating">保存修改</n-button>
+          <n-button @click="showEditModal = false">
+            <template #icon><n-icon><CloseIcon /></n-icon></template>
+            取消
+          </n-button>
+          <n-button type="primary" @click="handleUpdate" :loading="updating">
+            <template #icon><n-icon><SaveIcon /></n-icon></template>
+            保存修改
+          </n-button>
         </n-space>
       </template>
     </n-modal>
@@ -73,13 +91,25 @@
 
 <script setup lang="ts">
 import { ref, watch, reactive, h } from 'vue'
-import { NSpace, NButton, NDataTable, NModal, NForm, NFormItem, NInput, NCheckbox, NIcon, NDatePicker, NInputNumber, NGrid, NGi, NDivider, useMessage, useDialog } from 'naive-ui'
-import { CheckCircleOutlined as SuccessIcon } from '@vicons/material'
+import { NSpace, NButton, NDataTable, NModal, NForm, NFormItem, NInput, NCheckbox, NIcon, NDatePicker, NInputNumber, NGrid, NGi, NDivider, useMessage, useDialog, NTag } from 'naive-ui'
+import {
+  CheckCircleOutlined as SuccessIcon,
+  AddOutlined as AddIcon,
+  RefreshOutlined as RefreshIcon,
+  EditOutlined as EditIcon,
+  DeleteOutlined as DeleteIcon,
+  SaveOutlined as SaveIcon,
+  CloseOutlined as CloseIcon
+} from '@vicons/material'
 import axios from 'axios'
 
 const props = defineProps<{ host: any }>()
 const message = useMessage()
 const dialog = useDialog()
+
+const renderIcon = (icon: any) => {
+  return () => h(NIcon, null, { default: () => h(icon) })
+}
 
 const userList = ref<any[]>([])
 const loading = ref(false)
@@ -127,11 +157,17 @@ const columns = [
   {
     title: '操作',
     key: 'actions',
-    width: 150,
+    width: 220,
     render: (row: any) => h(NSpace, {}, {
       default: () => [
-        h(NButton, { size: 'small', secondary: true, type: 'info', onClick: () => openEditModal(row) }, { default: () => '编辑' }),
-        h(NButton, { size: 'small', type: 'error', ghost: true, onClick: () => handleDrop(row.username) }, { default: () => '删除' })
+        h(NButton, { size: 'small', secondary: true, type: 'info', onClick: () => openEditModal(row) }, { 
+          icon: renderIcon(EditIcon),
+          default: () => '编辑' 
+        }),
+        h(NButton, { size: 'small', type: 'error', ghost: true, onClick: () => handleDrop(row.username) }, { 
+          icon: renderIcon(DeleteIcon),
+          default: () => '删除' 
+        })
       ]
     })
   }

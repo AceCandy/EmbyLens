@@ -3,7 +3,10 @@
     <n-space vertical size="medium">
       <n-space justify="space-between" v-if="hostId">
         <n-space>
-          <n-button type="primary" @click="handleCreateProject">新建项目</n-button>
+          <n-button type="primary" @click="handleCreateProject">
+            <template #icon><n-icon><AddIcon /></n-icon></template>
+            新建项目
+          </n-button>
           <n-input
             v-model:value="searchQuery"
             placeholder="搜索项目名称或路径..."
@@ -20,8 +23,14 @@
             <template #icon><n-icon><RefreshIcon /></n-icon></template>
             刷新列表
           </n-button>
-          <n-button type="success" secondary @click="handleBulkAction('up')">全部启动/更新</n-button>
-          <n-button type="error" secondary @click="handleBulkAction('down')">全部停止</n-button>
+          <n-button type="success" secondary @click="handleBulkAction('up')">
+            <template #icon><n-icon><StartIcon /></n-icon></template>
+            全部启动/更新
+          </n-button>
+          <n-button type="error" secondary @click="handleBulkAction('down')">
+            <template #icon><n-icon><StopIcon /></n-icon></template>
+            全部停止
+          </n-button>
         </n-button-group>
       </n-space>
       
@@ -45,7 +54,10 @@
           <n-form-item label="基础保存路径">
             <n-input-group>
               <n-input v-model:value="baseSavePath" placeholder="选择存放项目的根目录" />
-              <n-button type="primary" ghost @click="pickBasePath">选择</n-button>
+              <n-button type="primary" ghost @click="pickBasePath">
+                <template #icon><n-icon><FolderIcon /></n-icon></template>
+                选择
+              </n-button>
             </n-input-group>
           </n-form-item>
           <n-form-item label="完整保存路径">
@@ -68,8 +80,14 @@
       </n-form>
       <template #footer>
         <n-space justify="end">
-          <n-button @click="showComposeModal = false">取消</n-button>
-          <n-button type="primary" @click="saveProject" :disabled="!!yamlError">保存项目</n-button>
+          <n-button @click="showComposeModal = false">
+            <template #icon><n-icon><CloseIcon /></n-icon></template>
+            取消
+          </n-button>
+          <n-button type="primary" @click="saveProject" :disabled="!!yamlError">
+            <template #icon><n-icon><SaveIcon /></n-icon></template>
+            保存项目
+          </n-button>
         </n-space>
       </template>
     </n-modal>
@@ -102,7 +120,10 @@ import {
   CloudDownloadOutlined as PullIcon,
   SearchOutlined as SearchIcon,
   BackupTableRound as BackupIcon,
-  AutorenewOutlined as RefreshIcon
+  AutorenewOutlined as RefreshIcon,
+  AddOutlined as AddIcon,
+  SaveOutlined as SaveIcon,
+  CloseOutlined as CloseIcon
 } from '@vicons/material'
 import axios from 'axios'
 import type { DataTableColumns } from 'naive-ui'
