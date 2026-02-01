@@ -19,11 +19,13 @@
       <n-card title="事件捕获日志 (最近 50 条)" size="small">
         <template #header-extra>
           <n-space>
-            <n-button quaternary circle size="small" type="error" @click="handleClear" title="清空全部日志">
+            <n-button secondary type="error" size="small" @click="handleClear">
               <template #icon><n-icon><ClearIcon /></n-icon></template>
+              清空日志
             </n-button>
-            <n-button quaternary circle size="small" @click="fetchLogs" :loading="loading" title="刷新列表">
+            <n-button secondary size="small" @click="fetchLogs" :loading="loading">
               <template #icon><n-icon><RefreshIcon /></n-icon></template>
+              刷新列表
             </n-button>
           </n-space>
         </template>
@@ -44,7 +46,8 @@
         </div>
         <template #footer>
           <n-button block type="primary" secondary @click="copyPayload">
-            复制原始载荷 (Payload)
+            <template #icon><n-icon><CopyIcon /></n-icon></template>
+            复制数据
           </n-button>
         </template>
       </n-modal>
@@ -61,7 +64,8 @@ import {
 import { 
   RefreshRound as RefreshIcon,
   TerminalOutlined as CodeIcon,
-  DeleteSweepRound as ClearIcon 
+  DeleteSweepRound as ClearIcon,
+  ContentCopyOutlined as CopyIcon
 } from '@vicons/material'
 import { copyElementContent } from '@/utils/clipboard'
 
@@ -71,6 +75,10 @@ import { useWebhook } from './webhook/hooks/useWebhook'
 const message = useMessage()
 const { loading, logs, showModal, selectedPayload, fetchLogs, handleClear, showJson } = useWebhook()
 const currentHost = window.location.hostname
+
+const renderIcon = (icon: any) => {
+  return () => h(NIcon, null, { default: () => h(icon) })
+}
 
 const copyPayload = () => {
   const selector = document.querySelector('.json-code-wrapper pre') ? '.json-code-wrapper pre' : '.json-code-wrapper'
@@ -113,7 +121,7 @@ const columns = [
           onClick: () => showJson(row.payload)
         },
         { 
-          icon: () => h(NIcon, null, { default: () => h(CodeIcon) }),
+          icon: renderIcon(CodeIcon),
           default: () => '查看原始 JSON'
         }
       )
@@ -125,47 +133,25 @@ onMounted(fetchLogs)
 </script>
 
 <style scoped>
-
 .toolkit-container { 
-
   width: 100%; 
-
 }
-
 :deep(.n-h2 .n-text--primary-type) {
-
   color: var(--primary-color);
-
 }
-
 .code-url {
-
   margin-left: 8px;
-
   color: var(--primary-color);
-
   background: rgba(0, 0, 0, 0.2);
-
   padding: 2px 6px;
-
   border-radius: 4px;
-
 }
-
 .json-code-wrapper { 
-
   background: #000; 
-
   padding: 16px; 
-
   border-radius: 8px; 
-
   max-height: 60vh; 
-
   overflow-y: auto; 
-
   border: 1px solid var(--border-color); 
-
 }
-
 </style>

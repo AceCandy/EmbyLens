@@ -3,7 +3,8 @@
     <n-card :bordered="false" class="chat-card" title="AI 对话" content-style="display: flex; flex-direction: column; height: 100%;">
       <template #header-extra>
         <n-button size="tiny" secondary type="error" @click="clearHistory" v-if="messages.length > 0">
-          清空对话
+          <template #icon><n-icon><DeleteIcon /></n-icon></template>
+          清空历史
         </n-button>
       </template>
       <div class="chat-window" ref="chatWindow">
@@ -45,7 +46,10 @@
 
 <script setup lang="ts">
 import { ref, nextTick } from 'vue'
-import { ScienceOutlined as SendIcon } from '@vicons/material'
+import { 
+  SendOutlined as SendIcon,
+  DeleteSweepOutlined as DeleteIcon
+} from '@vicons/material'
 import { useMessage, NCard, NEmpty, NInput, NButton, NIcon } from 'naive-ui'
 
 const message = useMessage()
@@ -55,9 +59,12 @@ const formatMessage = (text: string) => {
   return text.replace(/\n/g, '<br>')
 }
 
-const props = defineProps<{
-  systemPrompt?: string
-}>()
+const props = defineProps({
+  systemPrompt: {
+    type: String,
+    default: ''
+  }
+})
 
 const messages = ref<{role: string, content: string}[]>([])
 const userInput = ref('')

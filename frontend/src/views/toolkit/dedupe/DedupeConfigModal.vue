@@ -65,8 +65,14 @@
 
     <template #footer>
       <n-space justify="end">
-        <n-button @click="$emit('update:show', false)">取消</n-button>
-        <n-button type="primary" :loading="loading" @click="handleSave">保存并应用</n-button>
+        <n-button @click="$emit('update:show', false)">
+          <template #icon><n-icon><CloseIcon /></n-icon></template>
+          取消
+        </n-button>
+        <n-button type="primary" :loading="loading" @click="handleSave">
+          <template #icon><n-icon><SaveIcon /></n-icon></template>
+          保存并应用
+        </n-button>
       </n-space>
     </template>
   </n-modal>
@@ -74,7 +80,11 @@
 
 <script setup lang="ts">
 import { ref, reactive, watch } from 'vue'
-import { NModal, NForm, NFormItem, NTabs, NTabPane, NAlert, NInput, NSelect, NSpace, NButton } from 'naive-ui'
+import { NModal, NForm, NFormItem, NTabs, NTabPane, NAlert, NInput, NSelect, NSpace, NButton, NIcon } from 'naive-ui'
+import { 
+  CloseOutlined as CloseIcon,
+  SaveOutlined as SaveIcon
+} from '@vicons/material'
 
 const props = defineProps({
   show: Boolean,

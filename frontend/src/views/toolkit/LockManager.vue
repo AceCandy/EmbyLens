@@ -50,8 +50,9 @@
                     <b>[深度释放]</b><br/>
                     逻辑：清空 LockedFields 列表 (小锁) <b>并</b> 设置 LockData = false (主锁)。
                   </n-p>
-                  <n-button block type="error" ghost @click="handleAction('metadata_field_unlocker')" :loading="loading">
-                    字段全解锁
+                  <n-button block type="error" secondary @click="handleAction('metadata_field_unlocker')" :loading="loading">
+                    <template #icon><n-icon><UnlockIcon /></n-icon></template>
+                    执行字段解锁
                   </n-button>
                 </n-card>
               </n-gi>
@@ -64,7 +65,8 @@
                     逻辑：仅设置 LockData = true。保护整体元数据，但不修改各字段锁定状态。
                   </n-p>
                   <n-button block type="info" secondary @click="handleAction('item_locker')" :loading="loading">
-                    锁定主开关
+                    <template #icon><n-icon><LockIcon /></n-icon></template>
+                    执行全局锁定
                   </n-button>
                 </n-card>
               </n-gi>
@@ -77,7 +79,8 @@
                     逻辑：主锁、小锁一起解除 (LockData=false + 列表清空)。
                   </n-p>
                   <n-button block type="success" secondary @click="handleAction('item_unlocker')" :loading="loading">
-                    全量彻底解锁
+                    <template #icon><n-icon><ResetIcon /></n-icon></template>
+                    执行深度解锁
                   </n-button>
                 </n-card>
               </n-gi>
@@ -107,8 +110,13 @@
 import { ref, reactive, computed, watch, onMounted } from 'vue'
 import { 
   useMessage, NSpace, NH2, NText, NCard, NP, NButton, NGrid, NGi, 
-  NCode, NCheckboxGroup, NCheckbox, NSwitch, NForm, NFormItem, NSelect 
+  NCode, NCheckboxGroup, NCheckbox, NSwitch, NForm, NFormItem, NSelect, NIcon 
 } from 'naive-ui'
+import {
+  LockOpenOutlined as UnlockIcon,
+  LockOutlined as LockIcon,
+  LockResetOutlined as ResetIcon
+} from '@vicons/material'
 import axios from 'axios'
 
 const message = useMessage()

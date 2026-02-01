@@ -45,6 +45,7 @@
                     </n-checkbox-group>
                     <n-divider style="margin: 8px 0" />
                     <n-button block type="error" secondary @click="handleAction('people_remover')" :loading="loading">
+                      <template #icon><n-icon><DeleteIcon /></n-icon></template>
                       执行清空演职员
                     </n-button>
                   </n-space>
@@ -57,8 +58,9 @@
                     扫描指定媒体库中的所有剧集，清除“集”层级的 Genres 标签。
                   </n-p>
                   <n-divider style="margin: 8px 0" />
-                  <n-button block type="primary" quaternary @click="handleAction('episode_deleter')" :loading="loading">
-                    修复集类型标记
+                  <n-button block type="primary" secondary @click="handleAction('episode_deleter')" :loading="loading">
+                    <template #icon><n-icon><FixIcon /></n-icon></template>
+                    执行修复重置
                   </n-button>
                 </n-card>
               </n-gi>
@@ -94,8 +96,12 @@
 import { onMounted } from 'vue'
 import { 
   NSpace, NH2, NText, NCard, NP, NButton, NGrid, NGi, 
-  NCheckboxGroup, NCheckbox, NSwitch, NForm, NFormItem, NSelect, NDivider 
+  NCheckboxGroup, NCheckbox, NSwitch, NForm, NFormItem, NSelect, NDivider, NIcon 
 } from 'naive-ui'
+import {
+  PersonRemoveOutlined as DeleteIcon,
+  BuildCircleOutlined as FixIcon
+} from '@vicons/material'
 
 // 导入提取的逻辑
 import { useCleanupTools } from './cleanup/hooks/useCleanupTools'

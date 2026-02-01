@@ -12,7 +12,7 @@
           <template #icon>
             <n-icon><SyncIcon /></n-icon>
           </template>
-          {{ syncing ? '正在同步...' : '同步 Emby 媒体' }}
+          执行同步
         </n-button>
         <n-button 
           type="success"
@@ -22,7 +22,7 @@
           <template #icon>
             <n-icon><SearchIcon /></n-icon>
           </template>
-          查找重复项
+          执行搜索
         </n-button>
       </div>
     </div>
@@ -53,27 +53,27 @@
       <n-space>
         <n-button type="warning" secondary size="small" @click="autoSelect">
           <template #icon>
-            <n-icon><AutoIcon /></n-icon>
+            <n-icon><LabIcon /></n-icon>
           </template>
-          智能选中
+          智能分析
         </n-button>
-        <n-button quaternary size="small" @click="selectedIds = []">
+        <n-button type="primary" secondary size="small" @click="selectedIds = []">
           <template #icon>
             <n-icon><ClearIcon /></n-icon>
           </template>
-          全不选
+          取消选中
         </n-button>
       </n-space>
       <n-button 
         type="error"
+        secondary
         @click="confirmDelete" 
         :disabled="selectedIds.length === 0"
-        strong
       >
         <template #icon>
           <n-icon><DeleteIcon /></n-icon>
         </template>
-        删除选中项 ({{ selectedIds.length }})
+        执行删除 ({{ selectedIds.length }})
       </n-button>
     </div>
 
@@ -100,7 +100,7 @@
                 class="border-t border-gray-100/5 hover:bg-white/5 transition-colors"
                 :class="{'bg-red-500/10': selectedIds.includes(item.emby_id)}">
               <td class="p-3 text-center">
-                <input type="checkbox" :value="item.emby_id" v-model="selectedIds" class="w-4 h-4" />
+                <input type="checkbox" :value="item.emby_id" v-model:selectedIds="selectedIds" class="w-4 h-4" />
               </td>
               <td class="p-3">
                 <div class="font-medium text-sm">{{ item.name }}</div>
@@ -123,7 +123,7 @@
     <div v-else-if="!syncing" class="flex flex-col items-center justify-center py-20 bg-white/5 rounded-xl border-2 border-dashed border-white/10 text-gray-500">
       <n-icon size="48" class="mb-4 opacity-20"><CopyIcon /></n-icon>
       <p>暂无重复项数据</p>
-      <p class="text-sm">点击上方“同步”或“查找重复项”开始</p>
+      <p class="text-sm">点击上方“执行同步”或“执行搜索”开始</p>
     </div>
   </div>
 </template>
@@ -136,7 +136,7 @@ import {
   SyncOutlined as SyncIcon,
   SearchOutlined as SearchIcon,
   DeleteOutlined as DeleteIcon,
-  AutoFixHighOutlined as AutoIcon,
+  ScienceOutlined as LabIcon,
   ClearOutlined as ClearIcon,
   ContentCopyOutlined as CopyIcon
 } from '@vicons/material';
@@ -200,14 +200,6 @@ onMounted(() => {
   fetchDuplicates();
 });
 </script>
-
-<style scoped>
-.dedupe-container {
-  max-width: 1200px;
-  margin: 0 auto;
-}
-</style>
-
 
 <style scoped>
 .dedupe-container {

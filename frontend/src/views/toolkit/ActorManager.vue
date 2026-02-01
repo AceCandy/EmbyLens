@@ -14,7 +14,10 @@
             <n-input-group>
               <n-select v-model:value="embyMode" :options="searchModes" style="width: 110px" />
               <n-input v-model:value="embyQuery" :placeholder="embyMode === 'id' ? '输入 TMDB ID' : '输入姓名关键字'" @keyup.enter="handleEmbySearch" />
-              <n-button type="primary" secondary @click="handleEmbySearch" :loading="embyLoading">搜索</n-button>
+              <n-button type="primary" secondary @click="handleEmbySearch" :loading="embyLoading">
+                <template #icon><n-icon><SearchIcon /></n-icon></template>
+                执行搜索
+              </n-button>
             </n-input-group>
 
             <n-scrollbar style="max-height: 600px; margin-top: 12px">
@@ -57,7 +60,10 @@
                   <n-descriptions-item label="显示姓名 (修改后即时同步至 Emby)">
                     <n-input-group>
                       <n-input v-model:value="editName" placeholder="新姓名" />
-                      <n-button type="primary" @click="handleUpdateName" :loading="nameLoading">提交修改</n-button>
+                      <n-button type="primary" @click="handleUpdateName" :loading="nameLoading">
+                        <template #icon><n-icon><SaveIcon /></n-icon></template>
+                        执行修改
+                      </n-button>
                     </n-input-group>
                   </n-descriptions-item>
                 </n-descriptions>
@@ -85,7 +91,10 @@
           <n-code :code="JSON.stringify(jsonModal.data, null, 2)" language="json" word-wrap />
         </div>
         <template #footer>
-          <n-button block type="primary" secondary @click="copyRawJson">复制 JSON 数据</n-button>
+          <n-button block type="primary" secondary @click="copyRawJson">
+            <template #icon><n-icon><CopyIcon /></n-icon></template>
+            复制数据
+          </n-button>
         </template>
       </n-modal>
     </n-space>
@@ -99,7 +108,12 @@ import {
   NList, NListItem, NAvatar, NThing, NScrollbar, NEmpty, NGi, NGrid, 
   NDescriptions, NDescriptionsItem, NCode, NTag, NSelect, NModal, NIcon 
 } from 'naive-ui'
-import { TerminalOutlined as CodeIcon } from '@vicons/material'
+import { 
+  TerminalOutlined as CodeIcon,
+  SearchOutlined as SearchIcon,
+  SaveOutlined as SaveIcon,
+  ContentCopyOutlined as CopyIcon
+} from '@vicons/material'
 
 // 导入提取的逻辑
 import { useActorSearch } from './actor/hooks/useActorSearch'

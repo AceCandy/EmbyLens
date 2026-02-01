@@ -36,7 +36,10 @@
       </n-form-item>
 
       <div style="display: flex; justify-content: flex-end; margin-top: 8px">
-        <n-button type="primary" @click="handleRun">🚀 开始任务</n-button>
+        <n-button type="primary" @click="handleRun">
+          <template #icon><n-icon><PlayIcon /></n-icon></template>
+          执行打标签任务
+        </n-button>
       </div>
     </n-form>
   </n-card>
@@ -44,7 +47,8 @@
 
 <script setup lang="ts">
 import { reactive } from 'vue'
-import { NCard, NForm, NGrid, NFormItemGi, NRadioGroup, NRadio, NSpace, NCheckbox, NInput, NButton, NText, NFormItem, useDialog, useMessage } from 'naive-ui'
+import { NCard, NForm, NGrid, NFormItemGi, NRadioGroup, NRadio, NSpace, NCheckbox, NInput, NButton, NText, NFormItem, NIcon, useDialog, useMessage } from 'naive-ui'
+import { PlayArrowOutlined as PlayIcon } from '@vicons/material'
 
 const props = defineProps<{ onRun: (options: any) => void }>()
 const dialog = useDialog()

@@ -25,7 +25,10 @@
           </div>
         </n-form-item>
         <n-form-item>
-          <n-button type="primary" @click="saveConfig" :loading="saving" block>保存配置</n-button>
+          <n-button type="primary" @click="saveConfig" :loading="saving" block>
+            <template #icon><n-icon><SaveIcon /></n-icon></template>
+            执行保存
+          </n-button>
         </n-form-item>
       </n-form>
     </n-card>
@@ -36,7 +39,8 @@
 import { ref, onMounted } from 'vue'
 import { aiApi } from '@/api/ai'
 import { useMessage } from 'naive-ui'
-import { NCard, NForm, NFormItem, NInput, NButton, NSelect, NSwitch } from 'naive-ui'
+import { NCard, NForm, NFormItem, NInput, NButton, NSelect, NSwitch, NIcon } from 'naive-ui'
+import { SaveOutlined as SaveIcon } from '@vicons/material'
 
 const message = useMessage()
 const config = ref({

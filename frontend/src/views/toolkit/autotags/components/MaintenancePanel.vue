@@ -2,15 +2,24 @@
   <n-card title="辅助维护工具" size="small">
     <n-space vertical>
       <n-space>
-        <n-button size="small" secondary type="warning" @click="handleSpecific">清除指定标签</n-button>
-        <n-button size="small" secondary type="error" @click="handleClearAll">清空所有标签</n-button>
+        <n-button size="small" secondary type="warning" @click="handleSpecific">
+          <template #icon><n-icon><DeleteSweepIcon /></n-icon></template>
+          清除指定标签
+        </n-button>
+        <n-button size="small" secondary type="error" @click="handleClearAll">
+          <template #icon><n-icon><DeleteForeverIcon /></n-icon></template>
+          清空所有标签
+        </n-button>
       </n-space>
       <n-divider />
       <n-text depth="3" style="font-size: 12px">写入测试 (手动验证权限与解锁逻辑)</n-text>
       <n-input-group>
         <n-input v-model:value="testId" size="small" placeholder="Emby ID" style="width: 120px" />
         <n-input v-model:value="testTag" size="small" placeholder="标签名" />
-        <n-button size="small" type="primary" ghost @click="handleTest">测试</n-button>
+        <n-button size="small" type="primary" secondary @click="handleTest">
+          <template #icon><n-icon><SendIcon /></n-icon></template>
+          执行写入测试
+        </n-button>
       </n-input-group>
     </n-space>
   </n-card>
@@ -18,7 +27,12 @@
 
 <script setup lang="ts">
 import { ref, h } from 'vue'
-import { NCard, NSpace, NButton, NDivider, NText, NInputGroup, NInput, useDialog, useMessage } from 'naive-ui'
+import { NCard, NSpace, NButton, NDivider, NText, NInputGroup, NInput, NIcon, useDialog, useMessage } from 'naive-ui'
+import {
+  DeleteSweepOutlined as DeleteSweepIcon,
+  DeleteForeverOutlined as DeleteForeverIcon,
+  SendOutlined as SendIcon
+} from '@vicons/material'
 
 const props = defineProps<{
   onClearAll: () => void

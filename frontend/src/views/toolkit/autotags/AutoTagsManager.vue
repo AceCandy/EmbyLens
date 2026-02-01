@@ -21,7 +21,10 @@
                 <n-form-item label="Webhook URL:">
                   <n-input-group>
                     <n-input :value="webhookUrl" disabled />
-                    <n-button type="primary" ghost @click="copyUrl">复制</n-button>
+                    <n-button type="primary" secondary @click="copyUrl">
+                      <template #icon><n-icon><CopyIcon /></n-icon></template>
+                      复制 URL
+                    </n-button>
                   </n-input-group>
                 </n-form-item>
 
@@ -104,7 +107,10 @@
 <script setup lang="ts">
 import { ref, onMounted, reactive, computed } from 'vue'
 import { NCard, NSpace, NButton, NEmpty, NH3, NH2, NText, NIcon, useMessage, NForm, NFormItem, NInput, NInputGroup, NGrid, NGi, NFormItemGi, NSwitch, NInputNumber, NCheckbox, NSelect, NAlert } from 'naive-ui'
-import { SyncOutlined as SyncIcon, AddOutlined as AddIcon } from '@vicons/material'
+import { 
+  AddOutlined as AddIcon,
+  ContentCopyOutlined as CopyIcon
+} from '@vicons/material'
 import axios from 'axios'
 import { copyText } from '@/utils/clipboard'
 

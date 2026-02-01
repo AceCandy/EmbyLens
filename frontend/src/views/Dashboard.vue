@@ -214,9 +214,11 @@
                   :loading="upgrading"
                   @click="handleUpgrade"
                 >
+                  <template #icon><n-icon><UpgradeIcon /></n-icon></template>
                   {{ upgrading ? '升级脚本已启动...' : '立即升级系统' }}
                 </n-button>
-                <n-button block size="small" tertiary type="primary" @click="navigateTo('SettingsView')">
+                <n-button block size="small" type="primary" secondary @click="navigateTo('SettingsView')">
+                  <template #icon><n-icon><SettingsIcon /></n-icon></template>
                   进入配置中心
                 </n-button>
               </n-space>
@@ -281,7 +283,9 @@ import {
   AdminPanelSettingsRound as SecurityIcon,
   PersonOutlineRound as ProfileIcon,
   NotificationsActiveRound as NotificationIcon,
-  CloudUploadRound as BuildIcon
+  CloudUploadRound as BuildIcon,
+  SettingsOutlined as SettingsIcon,
+  SystemUpdateAltOutlined as UpgradeIcon
 } from '@vicons/material'
 import { currentViewKey } from '../store/navigationStore'
 

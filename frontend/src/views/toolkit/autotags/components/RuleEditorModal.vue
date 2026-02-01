@@ -65,8 +65,14 @@
 
     <template #footer>
       <n-space justify="end">
-        <n-button @click="$emit('update:show', false)">取消</n-button>
-        <n-button type="primary" @click="handleConfirm">保存规则</n-button>
+        <n-button @click="$emit('update:show', false)">
+          <template #icon><n-icon><CloseIcon /></n-icon></template>
+          取消
+        </n-button>
+        <n-button type="primary" @click="handleConfirm">
+          <template #icon><n-icon><SaveIcon /></n-icon></template>
+          保存规则
+        </n-button>
       </n-space>
     </template>
   </n-modal>
@@ -76,8 +82,12 @@
 import { ref, watch } from 'vue'
 import { 
   NModal, NForm, NFormItem, NInput, NSelect, NButton, NSpace, 
-  NRadioGroup, NRadio, NCheckbox 
+  NRadioGroup, NRadio, NCheckbox, NIcon 
 } from 'naive-ui'
+import {
+  CloseOutlined as CloseIcon,
+  SaveOutlined as SaveIcon
+} from '@vicons/material'
 import { COUNTRY_OPTIONS, GENRE_OPTIONS, ITEM_TYPE_OPTIONS } from '../constants'
 
 const props = defineProps<{ show: boolean, rule: any, isNew: boolean }>()

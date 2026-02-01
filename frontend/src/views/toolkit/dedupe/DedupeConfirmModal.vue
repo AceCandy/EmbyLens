@@ -54,12 +54,16 @@
 
     <template #footer>
       <n-space justify="end">
-        <n-button @click="$emit('update:show', false)">点错了，返回</n-button>
+        <n-button @click="$emit('update:show', false)">
+          <template #icon><n-icon><BackIcon /></n-icon></template>
+          点错了，返回
+        </n-button>
         <n-button 
           type="error" 
           :loading="loading" 
           @click="$emit('confirm')"
         >
+          <template #icon><n-icon><DeleteIcon /></n-icon></template>
           确认并永久删除 ({{ items.length }} 项)
         </n-button>
       </n-space>
@@ -68,7 +72,11 @@
 </template>
 
 <script setup lang="ts">
-import { NModal, NTable, NText, NTag, NSpace, NButton, NAlert } from 'naive-ui'
+import { NModal, NTable, NText, NTag, NSpace, NButton, NAlert, NIcon } from 'naive-ui'
+import { 
+  ArrowBackOutlined as BackIcon,
+  DeleteForeverOutlined as DeleteIcon
+} from '@vicons/material'
 
 defineProps<{
   show: boolean

@@ -39,7 +39,10 @@
                     <n-input v-model:value="forms.map.old" placeholder="旧类型名" size="small" />
                     <n-input v-model:value="forms.map.new_name" placeholder="新类型名" size="small" />
                     <n-input v-model:value="forms.map.new_id" placeholder="新 ID (可选)" size="small" />
-                    <n-button block type="primary" secondary @click="runMapper" :loading="loading">执行映射</n-button>
+                    <n-button block type="primary" secondary @click="runMapper" :loading="loading">
+                      <template #icon><n-icon><MapIcon /></n-icon></template>
+                      执行映射
+                    </n-button>
                   </n-space>
                 </n-card>
               </n-gi>
@@ -49,7 +52,10 @@
                   <n-space vertical>
                     <n-input v-model:value="forms.remove.tag" placeholder="要移除的标签名" size="small" />
                     <n-text depth="3" style="font-size: 12px">留空则清空该库所有类型标签。</n-text>
-                    <n-button block type="error" ghost @click="runRemover" :loading="loading">执行移除</n-button>
+                    <n-button block type="error" secondary @click="runRemover" :loading="loading">
+                      <template #icon><n-icon><DeleteIcon /></n-icon></template>
+                      执行移除
+                    </n-button>
                   </n-space>
                 </n-card>
               </n-gi>
@@ -59,7 +65,10 @@
                   <n-space vertical>
                     <n-input v-model:value="forms.add.name" placeholder="新增类型名" size="small" />
                     <n-input v-model:value="forms.add.id" placeholder="新增 ID (可选)" size="small" />
-                    <n-button block type="success" secondary @click="runAdder" :loading="loading">执行新增</n-button>
+                    <n-button block type="success" secondary @click="runAdder" :loading="loading">
+                      <template #icon><n-icon><AddIcon /></n-icon></template>
+                      执行新增
+                    </n-button>
                   </n-space>
                 </n-card>
               </n-gi>
@@ -96,8 +105,13 @@
 import { ref, reactive, watch, onMounted } from 'vue'
 import { 
   useMessage, NSpace, NH2, NText, NCard, NButton, NGrid, NGi, 
-  NSwitch, NForm, NFormItem, NSelect, NInput, NAlert 
+  NSwitch, NForm, NFormItem, NSelect, NInput, NAlert, NIcon 
 } from 'naive-ui'
+import {
+  SyncAltOutlined as MapIcon,
+  DeleteSweepOutlined as DeleteIcon,
+  AddCircleOutlineOutlined as AddIcon
+} from '@vicons/material'
 import axios from 'axios'
 
 const message = useMessage()

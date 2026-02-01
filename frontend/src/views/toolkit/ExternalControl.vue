@@ -27,8 +27,14 @@
                           @click="showFullToken = !showFullToken"
                           style="cursor: pointer"
                         />
-                        <n-button type="primary" @click="copyToken" :disabled="!config.api_token">复制</n-button>
-                        <n-button secondary @click="generateNewToken">重新生成</n-button>
+                        <n-button type="primary" secondary @click="copyToken" :disabled="!config.api_token">
+                          <template #icon><n-icon><CopyIcon /></n-icon></template>
+                          复制数据
+                        </n-button>
+                        <n-button secondary @click="generateNewToken">
+                          <template #icon><n-icon><RefreshIcon /></n-icon></template>
+                          重新生成
+                        </n-button>
                       </n-input-group>
                     </n-form-item>
                     <n-text depth="3">
@@ -146,6 +152,14 @@
       <div class="detail-wrapper">
         <n-code :code="currentPayload" language="json" word-wrap />
       </div>
+      <template #footer>
+        <n-space justify="end">
+          <n-button type="primary" @click="showLogDetail = false">
+            <template #icon><n-icon><CloseIcon /></n-icon></template>
+            关闭详情
+          </n-button>
+        </n-space>
+      </template>
     </n-modal>
   </div>
 </template>
@@ -155,8 +169,14 @@ import { ref, onMounted, h, watch, nextTick } from 'vue'
 import { 
   useMessage, NSpace, NH2, NText, NTabs, NTabPane, NCard, NAlert,
   NFormItem, NInput, NInputGroup, NButton, NGrid, NGi, NThing, NSwitch, NDivider,
-  NDataTable, NTag, NCode, NModal
+  NDataTable, NTag, NCode, NModal, NIcon
 } from 'naive-ui'
+import { 
+  ContentCopyOutlined as CopyIcon,
+  AutorenewOutlined as RefreshIcon,
+  SearchOutlined as ViewIcon,
+  CloseOutlined as CloseIcon
+} from '@vicons/material'
 
 // 导入提取的逻辑
 import { useExternalControl } from './externalControl/hooks/useExternalControl'
@@ -169,6 +189,10 @@ const {
   config, auditLogs, loadingLogs, pagination, showLogDetail, currentPayload, activeTab,
   loadConfig, saveSettings, generateNewToken, copyToken, fetchLogs, handlePageChange, handlePageSizeChange
 } = useExternalControl()
+
+const renderIcon = (icon: any) => {
+  return () => h(NIcon, null, { default: () => h(icon) })
+}
 
 const docsIframe = ref<HTMLIFrameElement | null>(null)
 
@@ -210,16 +234,17 @@ const columns = [
   {
     title: '操作',
     key: 'actions',
-    width: 80,
+    width: 120,
     render: (row: any) => {
       return h(NButton, {
         size: 'tiny', secondary: true, disabled: !row.payload,
+        icon: renderIcon(ViewIcon),
         onClick: () => {
           try { currentPayload.value = JSON.stringify(JSON.parse(row.payload), null, 2) } 
           catch { currentPayload.value = row.payload || '' }
           showLogDetail.value = true
         }
-      }, { default: () => '详情' })
+      }, { default: () => '查看详情' })
     }
   }
 ]
