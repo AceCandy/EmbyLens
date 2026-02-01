@@ -51,8 +51,8 @@ export function useSettings() {
   const fetchCurrent = async () => {
     await fetchServers()
     try {
-      const res = await serverApi.getCurrent()
-      const data = res.data
+      const res: any = await serverApi.getCurrent()
+      const data = res
       if (data) {
         globalConfig.tmdb_api_key = data.tmdb_api_key || ''
         globalConfig.bangumi_api_token = data.bangumi_api_token || ''

@@ -21,8 +21,8 @@ export function useCleanupTools() {
 
   const fetchLibraries = async () => {
     try {
-      const res = await serverApi.getLibraries()
-      libOptions.value = res.data
+      const res: any = await serverApi.getLibraries()
+      libOptions.value = res
     } catch (e) {}
   }
 

@@ -16,8 +16,8 @@ export function useActorLab() {
     if (!searchQuery.value) return
     searchLoading.value = true
     try {
-      const res = await actorsApi.searchTmdb(searchQuery.value)
-      searchResults.value = res.data.results || []
+      const res: any = await actorsApi.searchTmdb(searchQuery.value)
+      searchResults.value = res.results || []
     } catch (e) {
       message.error('搜索异常')
     } finally {
@@ -47,8 +47,8 @@ export function useActorLab() {
     }
 
     try {
-      const res = await actorLabApi.analyze(params)
-      result.value = res.data
+      const res: any = await actorLabApi.analyze(params)
+      result.value = res
       message.success('深度分析完成')
     } catch (e) {
       message.error('分析失败')

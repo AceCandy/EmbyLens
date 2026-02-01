@@ -13,8 +13,8 @@ export function useWebhook() {
   const fetchLogs = async () => {
     loading.value = true
     try {
-      const res = await webhookApi.getLogs()
-      logs.value = res.data
+      const res: any = await webhookApi.getLogs()
+      logs.value = res
     } catch (e) {
       message.error('加载日志失败')
     } finally {
