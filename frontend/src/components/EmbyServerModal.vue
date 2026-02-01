@@ -15,7 +15,7 @@
           <n-input v-model:value="form.name" placeholder="例如: 我的云端 Emby" />
         </n-form-item-gi>
         <n-form-item-gi label="服务器地址 (IP/URL)">
-          <n-input v-model:value="form.url" placeholder="http://1.2.3.4:8096" />
+          <n-input v-model:value="form.url" placeholder="http://1.2.3.5:8096" />
         </n-form-item-gi>
         <n-form-item-gi label="管理级 API Key">
           <n-input v-model:value="form.api_key" type="password" show-password-on="click" />

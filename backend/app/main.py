@@ -30,13 +30,52 @@ os.makedirs("/app/data/logs/audit", exist_ok=True)
 
 app = FastAPI(
     title="Lens API",
-    version="2.3.4",
+    version="2.3.5",
 )
 # 全局审计与性能监控中间件
 @app.middleware("http")
 async def audit_middleware(request: Request, call_next):
     start_time = time.time()
+    path = request.url.path
     
+    # --- 1. 核心安全拦截逻辑 ---
+    public_paths = ["/api/auth/login", "/api/auth/status", "/api/system/config", "/api/system/version", "/api/stats/summary"]
+    is_api = path.startswith("/api")
+    is_public = any(p in path for p in public_paths) or path == "/"
+    
+    if is_api and not is_public:
+        # 动态导入以避免循环依赖
+        from app.utils.auth import decode_access_token
+        
+        api_auth_enabled_val = await ConfigService.get("auth_enabled", True)
+        api_auth_enabled = api_auth_enabled_val is True or str(api_auth_enabled_val).lower() == "true"
+        
+        ui_auth_enabled_val = await ConfigService.get("ui_auth_enabled", True)
+        ui_auth_enabled = ui_auth_enabled_val is True or str(ui_auth_enabled_val).lower() == "true"
+        
+        if api_auth_enabled:
+            auth_header = request.headers.get("Authorization")
+            token = auth_header.replace("Bearer ", "") if auth_header and auth_header.startswith("Bearer ") else None
+            
+            valid = False
+            if token:
+                static_token = await ConfigService.get("api_token")
+                if static_token and token == static_token:
+                    valid = True
+                else:
+                    payload = decode_access_token(token)
+                    if payload and payload.get("type") != "2fa_pending":
+                        valid = True
+            elif not ui_auth_enabled:
+                valid = True
+            elif request.method == "GET":
+                valid = True
+                
+            if not valid:
+                from fastapi.responses import JSONResponse
+                return JSONResponse(status_code=401, content={"detail": "API Authentication Required"})
+
+    # --- 2. 审计与原始逻辑 ---
     # 排除审计路径和文件上传路径
     exclude_paths = [
         "/api/system/logs", 

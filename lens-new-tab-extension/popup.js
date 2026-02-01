@@ -1,4 +1,4 @@
-let config = { baseUrl: '' };
+let config = { baseUrl: '', apiToken: '' };
 let currentTab = null;
 let currentIcon = "";
 let activeType = 'nav'; // 'nav' or 'bookmark'
@@ -9,10 +9,12 @@ const viewTitle = document.getElementById('view-title');
 const toggleBtn = document.getElementById('toggle-config');
 const mainTabs = document.getElementById('main-tabs');
 
-// 初始化：读取地址和开关状态
-chrome.storage.local.get(['baseUrl', 'appendHome'], (items) => {
+// 初始化：读取地址、Token 和开关状态
+chrome.storage.local.get(['baseUrl', 'apiToken', 'appendHome'], (items) => {
     config.baseUrl = items.baseUrl || '';
+    config.apiToken = items.apiToken || '';
     document.getElementById('base-url').value = config.baseUrl;
+    document.getElementById('api-token').value = config.apiToken;
     document.getElementById('append-home').checked = !!items.appendHome;
     
     if (!config.baseUrl) {
@@ -21,6 +23,14 @@ chrome.storage.local.get(['baseUrl', 'appendHome'], (items) => {
         initAddView();
     }
 });
+
+function getHeaders() {
+    const headers = { 'Content-Type': 'application/json' };
+    if (config.apiToken) {
+        headers['Authorization'] = `Bearer ${config.apiToken}`;
+    }
+    return headers;
+}
 
 function showView(view) {
     if (view === 'config') {
@@ -63,6 +73,7 @@ document.getElementById('back-to-add').onclick = () => showView('add');
 
 document.getElementById('save-config').onclick = () => {
     const baseUrl = document.getElementById('base-url').value.trim().replace(/\/$/, "");
+    const apiToken = document.getElementById('api-token').value.trim();
     const appendHome = document.getElementById('append-home').checked;
     
     if (!baseUrl.startsWith('http')) {
@@ -71,8 +82,9 @@ document.getElementById('save-config').onclick = () => {
         return;
     }
 
-    chrome.storage.local.set({ baseUrl, appendHome }, () => {
+    chrome.storage.local.set({ baseUrl, apiToken, appendHome }, () => {
         config.baseUrl = baseUrl;
+        config.apiToken = apiToken;
         const status = document.getElementById('config-status');
         status.innerHTML = '<span class="success">配置已保存</span>';
         setTimeout(() => {
@@ -86,11 +98,7 @@ document.getElementById('save-config').onclick = () => {
 document.getElementById('sync-to-browser').onclick = () => {
     const modal = document.getElementById('confirm-modal');
     modal.style.display = 'flex';
-
-    document.getElementById('modal-cancel').onclick = () => {
-        modal.style.display = 'none';
-    };
-
+    document.getElementById('modal-cancel').onclick = () => { modal.style.display = 'none'; };
     document.getElementById('modal-confirm').onclick = async () => {
         modal.style.display = 'none';
         await performSync();
@@ -100,55 +108,37 @@ document.getElementById('sync-to-browser').onclick = () => {
 async function performSync() {
     const btn = document.getElementById('sync-to-browser');
     const status = document.getElementById('config-status');
-    
-    btn.disabled = true;
-    btn.textContent = '正在同步...';
+    btn.disabled = true; btn.textContent = '正在同步...';
 
     try {
-        // 1. 获取 Lens 书签
-        const res = await fetch(`${config.baseUrl}/api/bookmarks/?as_tree=true`);
+        const res = await fetch(`${config.baseUrl}/api/bookmarks/?as_tree=true`, { headers: getHeaders() });
+        if (!res.ok) throw new Error(res.status === 401 ? '认证失败，请检查 Token' : '获取书签失败');
         const tree = await res.json();
 
-        // 2. 找到浏览器的“书签栏” (通常 ID 为 "1")
         const nodes = await chrome.bookmarks.getTree();
         const root = nodes[0];
         const bookmarkBar = root.children.find(c => c.id === '1' || c.title.includes('书签栏') || c.title.includes('Bookmarks Bar'));
-
         if (!bookmarkBar) throw new Error('找不到书签栏');
 
-        // 3. 清空现有书签栏内容
         const existing = await chrome.bookmarks.getChildren(bookmarkBar.id);
-        for (const item of existing) {
-            await chrome.bookmarks.removeTree(item.id);
-        }
+        for (const item of existing) { await chrome.bookmarks.removeTree(item.id); }
 
-        // 4. 递归创建新书签
         async function createLocal(lensItems, parentId) {
             for (const item of lensItems) {
                 if (item.type === 'folder') {
-                    const newFolder = await chrome.bookmarks.create({
-                        parentId: parentId,
-                        title: item.title
-                    });
+                    const newFolder = await chrome.bookmarks.create({ parentId, title: item.title });
                     if (item.children) await createLocal(item.children, newFolder.id);
                 } else {
-                    await chrome.bookmarks.create({
-                        parentId: parentId,
-                        title: item.title,
-                        url: item.url
-                    });
+                    await chrome.bookmarks.create({ parentId, title: item.title, url: item.url });
                 }
             }
         }
-
         await createLocal(tree, bookmarkBar.id);
-        status.innerHTML = '<span class="success">同步成功！书签栏已更新。</span>';
+        status.innerHTML = '<span class="success">同步成功！</span>';
     } catch (err) {
-        console.error(err);
         status.innerHTML = `<span class="error">同步失败: ${err.message}</span>`;
     } finally {
-        btn.disabled = false;
-        btn.textContent = '同步书签到浏览器书签栏';
+        btn.disabled = false; btn.textContent = '同步书签到浏览器书签栏';
     }
 }
 
@@ -158,25 +148,22 @@ async function initAddView() {
     currentTab = tab;
     document.getElementById('title').value = tab.title;
 
-    // 加载导航分类
-    fetch(`${config.baseUrl}/api/navigation/categories`)
+    fetch(`${config.baseUrl}/api/navigation/categories`, { headers: getHeaders() })
         .then(r => r.json())
         .then(cats => {
             const select = document.getElementById('category');
             select.innerHTML = '';
             cats.forEach(c => {
                 const opt = document.createElement('option');
-                opt.value = c.id;
-                opt.textContent = c.name;
+                opt.value = c.id; opt.textContent = c.name;
                 select.appendChild(opt);
             });
         })
         .catch(() => {
-            document.getElementById('add-status').innerHTML = '<span class="error">连接失败，请检查地址</span>';
+            document.getElementById('add-status').innerHTML = '<span class="error">连接失败，请检查地址或 Token</span>';
         });
 
-    // 获取图标
-    fetch(`${config.baseUrl}/api/navigation/fetch-icon?url=${encodeURIComponent(tab.url)}`)
+    fetch(`${config.baseUrl}/api/navigation/fetch-icon?url=${encodeURIComponent(tab.url)}`, { headers: getHeaders() })
         .then(r => r.json())
         .then(data => {
             currentIcon = data.icon;
@@ -187,12 +174,11 @@ async function initAddView() {
 }
 
 function loadBookmarkFolders() {
-    fetch(`${config.baseUrl}/api/bookmarks/?as_tree=true`)
+    fetch(`${config.baseUrl}/api/bookmarks/?as_tree=true`, { headers: getHeaders() })
         .then(r => r.json())
         .then(tree => {
             const select = document.getElementById('folder');
             select.innerHTML = '<option value="">根目录</option>';
-            
             function traverse(items, level = 0) {
                 items.forEach(item => {
                     if (item.type === 'folder') {
@@ -210,14 +196,9 @@ function loadBookmarkFolders() {
 
 document.getElementById('save-site').onclick = () => {
     const btn = document.getElementById('save-site');
-    btn.disabled = true;
-    btn.textContent = '正在保存...';
-
-    if (activeType === 'nav') {
-        saveToNavigation(btn);
-    } else {
-        saveToBookmarks(btn);
-    }
+    btn.disabled = true; btn.textContent = '正在保存...';
+    if (activeType === 'nav') saveToNavigation(btn);
+    else saveToBookmarks(btn);
 };
 
 function saveToNavigation(btn) {
@@ -231,21 +212,18 @@ function saveToNavigation(btn) {
 
     fetch(`${config.baseUrl}/api/navigation/`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getHeaders(),
         body: JSON.stringify(payload)
     })
     .then(res => {
         if (res.ok) {
             document.getElementById('add-status').innerHTML = '<span class="success">收藏成功！</span>';
             setTimeout(() => window.close(), 1000);
-        } else {
-            throw new Error('Server error');
-        }
+        } else { throw new Error('Auth error'); }
     })
     .catch(err => {
-        btn.disabled = false;
-        btn.textContent = '确认保存';
-        document.getElementById('add-status').innerHTML = '<span class="error">保存失败</span>';
+        btn.disabled = false; btn.textContent = '确认保存';
+        document.getElementById('add-status').innerHTML = '<span class="error">保存失败，请检查 Token</span>';
     });
 }
 
@@ -261,20 +239,17 @@ function saveToBookmarks(btn) {
 
     fetch(`${config.baseUrl}/api/bookmarks/`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getHeaders(),
         body: JSON.stringify(payload)
     })
     .then(res => {
         if (res.ok) {
             document.getElementById('add-status').innerHTML = '<span class="success">书签已添加！</span>';
             setTimeout(() => window.close(), 1000);
-        } else {
-            throw new Error('Server error');
-        }
+        } else { throw new Error('Auth error'); }
     })
     .catch(err => {
-        btn.disabled = false;
-        btn.textContent = '确认保存';
-        document.getElementById('add-status').innerHTML = '<span class="error">保存失败</span>';
+        btn.disabled = false; btn.textContent = '确认保存';
+        document.getElementById('add-status').innerHTML = '<span class="error">保存失败，请检查 Token</span>';
     });
 }
