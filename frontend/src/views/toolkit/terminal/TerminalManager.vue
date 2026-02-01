@@ -17,6 +17,9 @@
       </div>
       <div class="bar-right">
         <n-space>
+          <n-button quaternary circle size="small" @click="showFileManager = true" title="文件管理" :disabled="activeHostId === 0 && false">
+            <template #icon><n-icon :component="FileIcon" /></template>
+          </n-button>
           <n-button quaternary circle size="small" @click="clearActiveTerm" title="清屏">
             <template #icon><n-icon :component="ClearIcon" /></template>
           </n-button>
@@ -65,6 +68,19 @@
         <CommandPanel @send="sendToActiveTerm" />
       </n-layout-sider>
     </n-layout>
+
+    <!-- 文件管理器弹窗 -->
+    <n-modal 
+      v-model:show="showFileManager" 
+      preset="card" 
+      :title="`文件管理: ${currentHostName}`" 
+      style="width: 90vw; max-width: 1200px)"
+      :segmented="{ content: 'soft' }"
+    >
+      <div style="height: 70vh">
+        <FileManager :host-id="activeHostId" :provider="terminalApi" />
+      </div>
+    </n-modal>
   </div>
 </template>
 
@@ -72,17 +88,20 @@
 import { ref, onMounted, computed, nextTick } from 'vue';
 import { 
   NLayout, NLayoutSider, NLayoutContent, NButton, NSpace, NTag, 
-  NDivider, NBreadcrumb, NBreadcrumbItem, NText, NIcon 
+  NDivider, NBreadcrumb, NBreadcrumbItem, NText, NIcon, NModal 
 } from 'naive-ui';
 import { 
   MenuOpenOutlined as MenuIcon,
   RefreshOutlined as RefreshIcon,
-  AutoDeleteOutlined as ClearIcon
+  AutoDeleteOutlined as ClearIcon,
+  FolderOpenOutlined as FileIcon
 } from '@vicons/material';
 
 import HostPanel from './components/HostPanel.vue';
 import CommandPanel from './components/CommandPanel.vue';
 import TerminalInstance from './components/TerminalInstance.vue';
+import FileManager from '@/components/FileManager.vue';
+import { terminalApi } from '@/api/terminal';
 
 interface Session {
   id: number;
@@ -92,6 +111,7 @@ interface Session {
 
 const collapsedSider = ref(false);
 const activeHostId = ref(0);
+const showFileManager = ref(false);
 const openSessions = ref<Session[]>([
   { id: 0, name: '本地 Shell', connected: false }
 ]);

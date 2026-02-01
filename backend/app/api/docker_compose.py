@@ -216,9 +216,16 @@ async def bulk_project_action(host_id: str, action: str = Body(..., embed=True))
 @router.post("/{host_id}/chmod")
 async def chmod_path(host_id: str, path: str = Body(..., embed=True), mode: Optional[str] = Body(None, embed=True), 
                      owner: Optional[str] = Body(None, embed=True), group: Optional[str] = Body(None, embed=True), 
-                     recursive: bool = Body(False, embed=True)):
+                     recursive: bool = Body(False, embed=True), action: Optional[str] = Body(None, embed=True)):
     service = get_docker_service(host_id)
     rec_flag = "-R " if recursive else ""
+    
+    if action == 'delete':
+        if len(path) < 5 or path in ["/", "/root", "/home", "/etc", "/var"]:
+            raise HTTPException(status_code=400, detail="Security Limit: Cannot delete system directories")
+        service.exec_command(f"rm -rf '{path}'")
+        return {"message": "Deleted"}
+
     if mode:
         service.exec_command(f"chmod {rec_flag}{mode} '{path}'")
     if owner or group:
