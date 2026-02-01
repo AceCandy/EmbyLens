@@ -101,9 +101,7 @@ code, pre, .n-code {
 
 /* 列表容器间距 */
 .toolkit-container {
-  padding: 0.25rem;
-  max-width: 1600px; /* PC 端适中宽度限制 */
-  margin: 0 auto;
+  width: 100%;
 }
 
 /* 滚动条美化 */

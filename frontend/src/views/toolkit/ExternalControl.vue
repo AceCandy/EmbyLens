@@ -1,94 +1,125 @@
 <template>
-  <div class="control-container">
-    <div class="control-content">
+  <div class="toolkit-container">
+    <n-space vertical size="large">
       <div class="page-header">
         <n-h2 prefix="bar" align-text>
           <n-text type="primary">外部控制体系</n-text>
         </n-h2>
-        <n-text depth="3">管理 API 认证、安全审计及自动化对接配置。</n-text>
+        <n-text depth="3">管理 API 认证、安全审计及自动化对接配置，为外部脚本和第三方应用提供能力支撑。</n-text>
       </div>
 
-      <n-tabs v-model:value="activeTab" type="line" animated class="control-tabs">
+      <n-tabs v-model:value="activeTab" type="line" animated>
         <!-- 1. API 密钥 -->
         <n-tab-pane name="api_key" tab="API 密钥">
-          <n-card :bordered="false" class="tab-card">
-            <n-space vertical size="large">
-              <n-alert title="安全说明" type="info">
-                API Token 用于外部系统（如脚本、第三方应用）通过 /api 接口与本系统交互。请妥善保管，泄露后请立即重新生成。
-              </n-alert>
-              <n-form-item label="当前生效的 Token">
-                <n-input-group>
-                  <n-input 
-                    v-model:value="config.api_token" 
-                    type="password" 
-                    show-password-on="mousedown" 
-                    placeholder="尚未设置 Token"
-                    readonly
-                  />
-                  <n-button type="primary" @click="copyToken" :disabled="!config.api_token">复制</n-button>
-                  <n-button secondary @click="generateNewToken">重新生成</n-button>
-                </n-input-group>
-              </n-form-item>
-              <n-text depth="3">注意：更改 Token 后，所有已对接的外部应用需要同步更新。</n-text>
-            </n-space>
-          </n-card>
+          <div style="padding-top: 16px;">
+            <n-grid :x-gap="12" :y-gap="12" :cols="24" item-responsive responsive="screen">
+              <n-gi span="24 m:16">
+                <n-card title="令牌管理" size="small" segmented>
+                  <n-space vertical size="large">
+                    <n-form-item label="当前生效的 API Token">
+                      <n-input-group>
+                        <n-input 
+                          v-model:value="config.api_token" 
+                          type="password" 
+                          show-password-on="mousedown" 
+                          placeholder="尚未设置 Token"
+                          readonly
+                        />
+                        <n-button type="primary" @click="copyToken" :disabled="!config.api_token">复制</n-button>
+                        <n-button secondary @click="generateNewToken">重新生成</n-button>
+                      </n-input-group>
+                    </n-form-item>
+                    <n-text depth="3">
+                      注意：更改 Token 后，所有已对接的外部应用（如自动化脚本、Webhook 触发器）需要同步更新。
+                    </n-text>
+                  </n-space>
+                </n-card>
+              </n-gi>
+              <n-gi span="24 m:8">
+                <n-card title="安全说明" size="small" segmented>
+                  <n-alert title="Token 安全性" type="info" :bordered="false">
+                    API Token 用于外部系统通过 /api 接口与本系统交互。
+                  </n-alert>
+                  <n-text depth="3" style="font-size: 13px; margin-top: 12px; display: block;">
+                    1. <b>权限等同管理员</b>：Token 拥有系统所有接口的操作权限。<br/>
+                    2. <b>加密存储</b>：Token 在数据库中加密存储，无法反向解密。<br/>
+                    3. <b>泄露处理</b>：如果怀疑 Token 泄露，请立即点击“重新生成”。
+                  </n-text>
+                </n-card>
+              </n-gi>
+            </n-grid>
+          </div>
         </n-tab-pane>
 
         <!-- 2. 安全设置 -->
         <n-tab-pane name="settings" tab="安全设置">
-          <n-card :bordered="false" class="tab-card">
-            <n-grid x-gap="24" y-gap="24" cols="1 s:1 m:2 l:2" responsive="screen">
-              <n-gi>
-                <n-card title="访问控制" size="small" embedded>
-                  <n-space vertical>
-                    <div class="setting-item">
-                      <n-thing title="强制身份认证" description="开启后，所有外部 API 请求必须携带有效的 Bearer Token" />
-                      <n-switch v-model:value="config.auth_enabled" @update:value="saveSettings" />
-                    </div>
-                    <n-divider />
-                    <div class="setting-item">
-                      <n-thing title="本地请求豁免" description="允许来自 127.0.0.1 的请求跳过 Token 校验" />
-                      <n-switch :value="true" disabled />
-                    </div>
-                  </n-space>
-                </n-card>
+          <div style="padding-top: 16px;">
+            <n-grid :x-gap="12" :y-gap="12" :cols="24" item-responsive responsive="screen">
+              <n-gi span="24 m:16">
+                <n-grid :x-gap="12" :y-gap="12" :cols="2" item-responsive responsive="screen">
+                  <n-gi span="2 m:1">
+                    <n-card title="访问控制" size="small" segmented style="height: 100%">
+                      <n-space vertical>
+                        <div class="setting-item">
+                          <n-thing title="强制身份认证" description="开启后，所有 API 请求必须校验 Token" />
+                          <n-switch v-model:value="config.auth_enabled" @update:value="saveSettings" />
+                        </div>
+                        <n-divider />
+                        <div class="setting-item">
+                          <n-thing title="本地请求豁免" description="允许来自回环地址的请求跳过校验" />
+                          <n-switch :value="true" disabled />
+                        </div>
+                      </n-space>
+                    </n-card>
+                  </n-gi>
+                  <n-gi span="2 m:1">
+                    <n-card title="审计策略" size="small" segmented style="height: 100%">
+                      <n-space vertical>
+                        <div class="setting-item">
+                          <n-thing title="开启全局审计" description="记录所有 API 请求的方法、路径及状态码" />
+                          <n-switch v-model:value="config.audit_enabled" @update:value="saveSettings" />
+                        </div>
+                        <n-divider />
+                        <div class="setting-item">
+                          <n-thing title="Payload 捕获" description="自动脱敏并存储请求 Body 内容" />
+                          <n-switch :value="config.audit_enabled" disabled />
+                        </div>
+                      </n-space>
+                    </n-card>
+                  </n-gi>
+                </n-grid>
               </n-gi>
-              <n-gi>
-                <n-card title="审计策略" size="small" embedded>
-                  <n-space vertical>
-                    <div class="setting-item">
-                      <n-thing title="开启全局审计" description="记录所有 API 请求的方法、路径、状态码及耗时" />
-                      <n-switch v-model:value="config.audit_enabled" @update:value="saveSettings" />
-                    </div>
-                    <n-divider />
-                    <div class="setting-item">
-                      <n-thing title="Payload 捕获" description="自动脱敏并存储 POST/PUT 请求的 Body 内容" />
-                      <n-switch :value="config.audit_enabled" disabled />
-                    </div>
-                  </n-space>
+              <n-gi span="24 m:8">
+                <n-card title="设置说明" size="small" segmented>
+                  <n-text depth="3" style="font-size: 13px">
+                    <b>强制认证：</b>建议始终开启。只有在调试或处于隔离的受信任内网时才考虑关闭。<br/><br/>
+                    <b>审计日志：</b>开启审计会产生少量的数据库写入开销，但对于回溯系统操作和定位自动化对接问题非常有帮助。
+                  </n-text>
                 </n-card>
               </n-gi>
             </n-grid>
-          </n-card>
+          </div>
         </n-tab-pane>
 
         <!-- 3. 访问日志 -->
         <n-tab-pane name="logs" tab="访问日志">
-          <n-card :bordered="false" class="tab-card">
-            <n-data-table
-              remote
-              ref="table"
-              :columns="columns"
-              :data="auditLogs"
-              :loading="loadingLogs"
-              :pagination="pagination"
-              :row-key="row => row.id"
-              @update:page="handlePageChange"
-              @update:page-size="handlePageSizeChange"
-              size="medium"
-              :single-line="false"
-            />
-          </n-card>
+          <div style="padding-top: 16px;">
+            <n-card title="审计日志记录" size="small" segmented>
+              <n-data-table
+                remote
+                ref="table"
+                :columns="columns"
+                :data="auditLogs"
+                :loading="loadingLogs"
+                :pagination="pagination"
+                :row-key="row => row.id"
+                @update:page="handlePageChange"
+                @update:page-size="handlePageSizeChange"
+                size="small"
+                :single-line="false"
+              />
+            </n-card>
+          </div>
         </n-tab-pane>
 
         <!-- 4. API 文档 -->
@@ -106,7 +137,7 @@
           </div>
         </n-tab-pane>
       </n-tabs>
-    </div>
+    </n-space>
 
     <!-- Log Detail Modal -->
     <n-modal v-model:show="showLogDetail" preset="card" title="请求详情 (Payload)" style="width: 800px">
@@ -169,9 +200,9 @@ watch(activeTab, (val) => {
 
 const columns = [
   { title: '时间', key: 'timestamp', width: 180, render: (row: any) => new Date(row.timestamp).toLocaleString() },
-  { title: '方法', key: 'method', width: 80, render: (row: any) => h(NTag, { type: row.method === 'GET' ? 'success' : 'info', size: 'small' }, { default: () => row.method }) },
+  { title: '方法', key: 'method', width: 80, render: (row: any) => h(NTag, { type: row.method === 'GET' ? 'success' : 'info', size: 'small', quaternary: true }, { default: () => row.method }) },
   { title: '路径', key: 'path', ellipsis: true },
-  { title: '状态', key: 'status_code', width: 80, render: (row: any) => h(NTag, { type: row.status_code < 400 ? 'success' : 'error', size: 'small' }, { default: () => row.status_code }) },
+  { title: '状态', key: 'status_code', width: 80, render: (row: any) => h(NTag, { type: row.status_code < 400 ? 'success' : 'error', size: 'small', quaternary: true }, { default: () => row.status_code }) },
   { title: '来源 IP', key: 'client_ip', width: 130 },
   { title: '耗时', key: 'process_time', width: 100, render: (row: any) => `${row.process_time.toFixed(1)}ms` },
   {
@@ -198,15 +229,6 @@ onMounted(() => { loadConfig(); fetchLogs() })
 </script>
 
 <style scoped>
-.control-container {
-  padding: 16px;
-  width: 100%;
-}
-@media (min-width: 768px) {
-  .control-container { padding: 24px; }
-}
-.control-content { width: 100%; }
-.tab-card { background-color: transparent; padding-top: 16px; }
 .setting-item { display: flex; justify-content: space-between; align-items: center; }
 
 .docs-wrapper {
@@ -220,6 +242,13 @@ onMounted(() => { loadConfig(); fetchLogs() })
   border: none;
   display: block;
   overflow: hidden;
+}
+
+.detail-wrapper {
+  background-color: rgba(0, 0, 0, 0.3);
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
 }
 
 /* 彻底移除 Naive UI 内部的高度和滚动封印 */

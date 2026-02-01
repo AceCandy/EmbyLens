@@ -1,39 +1,76 @@
 <template>
-  <div class="notification-manager">
+  <div class="toolkit-container">
     <n-space vertical size="large">
-      <n-card title="通知中心设置" subtitle="配置多个 Telegram Bot 或其他推送通道，实现高度自定义的消息通知">
-        <template #header-extra>
-          <n-space align="center">
-            <span>启用通知系统</span>
-            <n-switch v-model:value="settings.enabled" @update:value="saveSettings" />
+      <!-- 页面标题区 -->
+      <div class="page-header">
+        <n-h2 prefix="bar" align-text><n-text type="primary">通知中心设置</n-text></n-h2>
+        <n-text depth="3">配置多平台推送通道，实现系统备份、任务执行及安全审计的实时通知。</n-text>
+      </div>
+
+      <n-grid :x-gap="12" :y-gap="12" :cols="24" item-responsive responsive="screen">
+        <!-- 左侧：主要配置区 -->
+        <n-gi span="24 m:16">
+          <n-space vertical size="large">
+            <!-- 1. 全局开关 -->
+            <n-card title="系统通知总开关" size="small" segmented>
+              <template #header-extra>
+                <n-switch v-model:value="settings.enabled" @update:value="saveSettings" />
+              </template>
+              <n-text depth="3">
+                开启后，系统将根据下方各机器人的配置，在特定事件发生时发送通知。
+              </n-text>
+            </n-card>
+
+            <!-- 2. 机器人列表 -->
+            <n-card title="推送通道 (Bots) 列表" size="small" segmented>
+              <template #header-extra>
+                <n-button type="primary" size="small" @click="handleAddBot">
+                  <template #icon>
+                    <n-icon><add-icon /></n-icon>
+                  </template>
+                  添加新机器人
+                </n-button>
+              </template>
+
+              <n-data-table
+                :columns="columns"
+                :data="settings.bots"
+                :bordered="false"
+                size="small"
+              />
+            </n-card>
           </n-space>
-        </template>
-        <div class="settings-content">
-          <n-alert type="info" bordered>
-            你可以添加多个机器人，并为每个机器人分配不同的订阅事件。例如：一个机器人专门接收备份通知，另一个接收系统告警。
-          </n-alert>
-        </div>
-      </n-card>
+        </n-gi>
 
-      <n-card title="机器人列表">
-        <template #header-extra>
-          <n-button type="primary" size="small" @click="handleAddBot">
-            <template #icon>
-              <n-icon><add-icon /></n-icon>
-            </template>
-            添加机器人
-          </n-button>
-        </template>
+        <!-- 右侧：辅助信息区 -->
+        <n-gi span="24 m:8">
+          <n-space vertical size="large">
+            <n-card title="配置指南" size="small" segmented>
+              <n-alert type="info" :bordered="false" style="margin-bottom: 12px">
+                Lens 支持多机器人并行推送。
+              </n-alert>
+              <n-text depth="3" style="font-size: 13px">
+                <b>多实例逻辑：</b><br/>
+                你可以为不同级别的通知配置不同的机器人。例如：<br/>
+                1. <b>核心监控</b>：专门订阅系统备份、升级通知。<br/>
+                2. <b>任务详情</b>：专门接收打标签、重复项扫描的任务日志。
+              </n-text>
+            </n-card>
 
-        <n-data-table
-          :columns="columns"
-          :data="settings.bots"
-          :bordered="false"
-        />
-      </n-card>
+            <n-card title="关于交互模式" size="small" segmented>
+              <n-text depth="3" style="font-size: 13px">
+                <b>Telegram 交互：</b><br/>
+                开启交互模式后，你可以通过 Telegram 机器人直接执行 Lens 的部分控制命令（如重启 Docker 容器）。<br/><br/>
+                <n-text type="warning"><b>安全提示：</b></n-text><br/>
+                开启交互模式时，请务必在授权 ID 列表中填写您自己的 Telegram 用户 ID，否则任何人都可以通过机器人控制您的系统。
+              </n-text>
+            </n-card>
+          </n-space>
+        </n-gi>
+      </n-grid>
     </n-space>
 
-    <!-- 机器人编辑弹窗 -->
+    <!-- 机器人编辑弹窗 (保持原样，仅做样式微调) -->
     <n-modal v-model:show="showEditModal" preset="card" :title="editingBot.id ? '编辑机器人' : '添加机器人'" style="width: 600px">
       <n-form
         ref="formRef"
@@ -41,6 +78,7 @@
         label-placement="left"
         label-width="100"
         require-mark-placement="right-asterisk"
+        size="small"
       >
         <n-form-item label="名称" path="name">
           <n-input v-model:value="editingBot.name" placeholder="例如：Lens 备份助手" />
@@ -68,7 +106,7 @@
           <n-space vertical style="width: 100%">
             <n-switch v-model:value="editingBot.is_interactive" />
             <n-alert v-if="editingBot.is_interactive" type="warning" size="small">
-              开启后，你可以通过 Telegram 直接操控 Docker。请务必配置下方的授权用户 ID 以确保安全。
+              开启后，你可以通过 Telegram 直接操控 Docker。请务必配置下方的授权用户 ID。
             </n-alert>
           </n-space>
         </n-form-item>
@@ -87,8 +125,8 @@
       </n-form>
       <template #footer>
         <n-space justify="end">
-          <n-button @click="showEditModal = false">取消</n-button>
-          <n-button type="primary" :loading="saving" @click="handleSaveBot">确定</n-button>
+          <n-button size="small" @click="showEditModal = false">取消</n-button>
+          <n-button size="small" type="primary" :loading="saving" @click="handleSaveBot">确定保存</n-button>
         </n-space>
       </template>
     </n-modal>
@@ -103,20 +141,8 @@
 <script setup lang="ts">
 import { onMounted, h } from 'vue'
 import { 
-  NButton, 
-  NSpace, 
-  NTag, 
-  NPopconfirm,
-  NCard,
-  NSwitch,
-  NAlert,
-  NDataTable,
-  NModal,
-  NForm,
-  NFormItem,
-  NInput,
-  NSelect,
-  DataTableColumns
+  NButton, NSpace, NTag, NPopconfirm, NCard, NSwitch, NAlert, NDataTable, NModal, NForm, 
+  NFormItem, NInput, NSelect, NH2, NText, NGrid, NGi, DataTableColumns, useMessage 
 } from 'naive-ui'
 import { AddOutlined as AddIcon } from '@vicons/material'
 
@@ -148,12 +174,13 @@ const typeOptions = [
 const eventOptions = NOTIFICATION_EVENTS
 
 const columns: DataTableColumns<NotificationBot> = [
-  { title: '名称', key: 'name' },
+  { title: '机器人名称', key: 'name' },
   { 
     title: '状态', 
     key: 'enabled',
+    width: 80,
     render(row) {
-      return h(NTag, { type: row.enabled ? 'success' : 'default', size: 'small' }, { default: () => row.enabled ? '启用' : '禁用' })
+      return h(NTag, { type: row.enabled ? 'success' : 'default', size: 'small', round: true, quaternary: true }, { default: () => row.enabled ? '运行中' : '已停用' })
     }
   },
   {
@@ -161,20 +188,21 @@ const columns: DataTableColumns<NotificationBot> = [
     key: 'subscribed_events',
     render(row) {
       return h(NSpace, { size: 'small' }, {
-        default: () => row.subscribed_events.map(ev => h(NTag, { size: 'tiny', bordered: false, type: 'info' }, { default: () => ev }))
+        default: () => row.subscribed_events.map(ev => h(NTag, { size: 'tiny', bordered: false, type: 'info', quaternary: true }, { default: () => ev }))
       })
     }
   },
   {
     title: '操作',
     key: 'actions',
+    width: 180,
     render(row) {
-      return h(NSpace, {}, {
+      return h(NSpace, { justify: 'end' }, {
         default: () => [
-          h(NButton, { size: 'tiny', secondary: true, onClick: () => handleTestBot(row.id) }, { default: () => '测试' }),
+          h(NButton, { size: 'tiny', tertiary: true, onClick: () => handleTestBot(row.id) }, { default: () => '测试' }),
           h(NButton, { size: 'tiny', onClick: () => handleEditBot(row) }, { default: () => '编辑' }),
           h(NPopconfirm, { onPositiveClick: () => handleDeleteBot(row.id) }, {
-            trigger: () => h(NButton, { size: 'tiny', type: 'error', secondary: true }, { default: () => '删除' }),
+            trigger: () => h(NButton, { size: 'tiny', type: 'error', quaternary: true }, { default: () => '删除' }),
             default: () => '确定删除该机器人吗？'
           })
         ]
@@ -187,11 +215,5 @@ onMounted(fetchSettings)
 </script>
 
 <style scoped>
-.notification-manager {
-  max-width: 1200px;
-  margin: 0 auto;
-}
-.settings-content {
-  padding: 10px 0;
-}
+/* 使用全局 toolkit-container 样式，移除局部固定宽度 */
 </style>

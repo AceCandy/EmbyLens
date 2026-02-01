@@ -6,34 +6,57 @@
         <n-text depth="3">输入项目的 Emby ID，实时抓取该项目的全量元数据 JSON 包，用于调试和审计。</n-text>
       </div>
 
-      <!-- 1. 查询表单 -->
-      <n-card title="元数据即时抓取" size="small">
-        <template #header-extra>
-          <n-tag type="info" round quaternary size="small">Direct API</n-tag>
-        </template>
-        <n-input-group>
-          <n-input-group-label style="width: 140px">Emby Item ID</n-input-group-label>
-          <n-input v-model:value="itemId" placeholder="输入 ID，例如: 12345" @keyup.enter="fetchInfo" />
-          <n-button type="primary" @click="fetchInfo" :loading="loading">抓取元数据</n-button>
-        </n-input-group>
-      </n-card>
+      <n-grid :x-gap="12" :y-gap="12" :cols="24" item-responsive responsive="screen">
+        <!-- 左侧：主要功能区 -->
+        <n-gi span="24 m:16">
+          <n-space vertical size="large">
+            <!-- 1. 查询表单 -->
+            <n-card title="元数据即时抓取" size="small">
+              <template #header-extra>
+                <n-tag type="info" round quaternary size="small">Direct API</n-tag>
+              </template>
+              <n-input-group>
+                <n-input-group-label style="width: 140px">Emby Item ID</n-input-group-label>
+                <n-input v-model:value="itemId" placeholder="输入 ID，例如: 12345" @keyup.enter="fetchInfo" />
+                <n-button type="primary" @click="fetchInfo" :loading="loading">抓取元数据</n-button>
+              </n-input-group>
+            </n-card>
 
-      <!-- 2. 结果展示 -->
-      <n-card v-if="itemData" title="抓取结果 (Raw Metadata JSON)" size="small" segmented>
-        <template #header-extra>
-          <n-button quaternary size="tiny" @click="copyData">一键复制数据</n-button>
-        </template>
-        <div class="json-viewer">
-          <n-code :code="JSON.stringify(itemData, null, 2)" language="json" word-wrap />
-        </div>
-      </n-card>
+            <!-- 2. 结果展示 -->
+            <n-card v-if="itemData" title="抓取结果 (Raw Metadata JSON)" size="small" segmented>
+              <template #header-extra>
+                <n-button quaternary size="tiny" @click="copyData">一键复制数据</n-button>
+              </template>
+              <div class="json-viewer">
+                <n-code :code="JSON.stringify(itemData, null, 2)" language="json" word-wrap />
+              </div>
+            </n-card>
 
-      <n-empty v-else description="暂无数据，请输入 ID 并点击抓取" />
+            <n-empty v-else description="暂无数据，请输入 ID 并点击抓取" />
+          </n-space>
+        </n-gi>
 
-      <!-- 3. 调试：Payload 快照 -->
-      <n-card title="调试：原子接口信息" embedded :bordered="false">
-        <n-p depth="3">后端端点: <code>GET /api/items/info?item_id={{ itemId || 'xxx' }}</code></n-p>
-      </n-card>
+        <!-- 右侧：辅助信息区 -->
+        <n-gi span="24 m:8">
+          <n-space vertical size="large">
+            <n-card title="调试信息" size="small" segmented>
+              <n-p depth="3" style="margin-bottom: 8px">后端端点:</n-p>
+              <n-code :code="`GET /api/items/info?item_id=${itemId || 'xxx'}`" language="bash" />
+              <n-p depth="3" style="margin-top: 16px">
+                该工具直接调用 Emby 的 <code>/Items/{id}</code> 接口，返回的结果是经过后端透传的原始数据。
+              </n-p>
+            </n-card>
+
+            <n-card title="使用说明" size="small" segmented>
+              <n-text depth="3">
+                1. 在 Emby Web 端的地址栏中可以找到项目 ID。<br/>
+                2. 此工具对于排查元数据同步问题非常有用。<br/>
+                3. 如果 ID 正确但无法抓取，请检查服务器连接状态。
+              </n-text>
+            </n-card>
+          </n-space>
+        </n-gi>
+      </n-grid>
     </n-space>
   </div>
 </template>
@@ -41,7 +64,7 @@
 <script setup lang="ts">
 import { 
   useMessage, NSpace, NH2, NText, NCard, NInput, NButton, NInputGroup, 
-  NInputGroupLabel, NCode, NTag, NEmpty, NP 
+  NInputGroupLabel, NCode, NTag, NEmpty, NP, NGrid, NGi
 } from 'naive-ui'
 import { copyElementContent } from '@/utils/clipboard'
 
@@ -62,12 +85,6 @@ const copyData = () => {
 </script>
 
 <style scoped>
-.toolkit-container { 
-  width: 100%; 
-}
-:deep(.n-h2 .n-text--primary-type) {
-  color: var(--primary-color);
-}
 .json-viewer {
   background-color: rgba(0, 0, 0, 0.3);
   padding: 12px;
