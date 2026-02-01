@@ -75,7 +75,7 @@ import {
   CloseOutlined as CloseIcon,
   SensorsOutlined as TestIcon
 } from '@vicons/material'
-import axios from 'axios'
+import request from '@/utils/request'
 
 defineProps<{ show: boolean }>()
 const emit = defineEmits(['update:show', 'refresh'])
@@ -145,8 +145,10 @@ const columns = [
 ]
 
 const fetchHosts = async () => {
-  const res = await axios.get('/api/pgsql/hosts')
-  hosts.value = res.data
+  try {
+    const res = await request.get('/api/pgsql/hosts')
+    hosts.value = (res as any) || []
+  } catch (e) {}
 }
 
 const handleAdd = () => {
@@ -168,9 +170,9 @@ const handleEdit = (row: any) => {
 const handleTest = async () => {
   testing.value = true
   try {
-    const res = await axios.post('/api/pgsql/test', form)
-    if (res.data.success) message.success('测试成功: ' + res.data.version)
-    else message.error('失败: ' + res.data.message)
+    const res: any = await request.post('/api/pgsql/test', form)
+    if (res.success) message.success('测试成功: ' + res.version)
+    else message.error('失败: ' + res.message)
   } catch (e: any) { message.error('请求出错') }
   finally { testing.value = false }
 }
@@ -179,10 +181,10 @@ const handleSave = async () => {
   if (!form.name) return message.warning('请输入名称')
   try {
     if (editingHostId.value) {
-      await axios.put(`/api/pgsql/hosts/${editingHostId.value}`, form, { params: { name: form.name } })
+      await request.put(`/api/pgsql/hosts/${editingHostId.value}`, form, { params: { name: form.name } })
       message.success('已更新')
     } else {
-      await axios.post('/api/pgsql/hosts', form, { params: { name: form.name } })
+      await request.post('/api/pgsql/hosts', form, { params: { name: form.name } })
       message.success('已添加')
     }
     showAdd.value = false
@@ -199,7 +201,7 @@ const handleDelete = (id: string) => {
     negativeText: '取消',
     onPositiveClick: async () => {
       try {
-        await axios.delete(`/api/pgsql/hosts/${id}`)
+        await request.delete(`/api/pgsql/hosts/${id}`)
         fetchHosts()
         emit('refresh')
         message.info('已移除')

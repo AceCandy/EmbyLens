@@ -1,6 +1,6 @@
-import axios from 'axios'
+import request from '../utils/request'
 
 export const pgsqlApi = {
-  getHosts: () => axios.get('/api/pgsql/hosts'),
-  // Add other pgsql endpoints if needed
+  getHosts: () => request.get('/api/pgsql/hosts'),
+  getDatabases: (config: any) => request.post('/api/pgsql/databases', config),
 }

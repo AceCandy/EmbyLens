@@ -14,17 +14,18 @@ export function usePgsqlHosts() {
   const fetchHosts = async () => {
     try {
       const res = await pgsqlApi.getHosts()
-      hosts.value = res.data
+      hosts.value = (res as any) || []
       
       if (hosts.value.length > 0) {
         const savedHostId = localStorage.getItem(STORAGE_KEYS.SELECTED_PGSQL_HOST)
         if (savedHostId && hosts.value.some(h => h && h.id === savedHostId)) {
           selectedHostId.value = savedHostId
         } else if (!selectedHostId.value) {
-          selectedHostId.value = hosts.value[0].id
+          selectedHostId.value = hosts.value[0]?.id
         }
       }
     } catch (e) {
+      console.error(e)
       message.error('加载主机列表失败')
     }
   }

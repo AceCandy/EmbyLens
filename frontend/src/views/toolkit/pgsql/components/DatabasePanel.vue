@@ -78,7 +78,7 @@ import {
   SaveOutlined as SaveIcon,
   CloseOutlined as CloseIcon
 } from '@vicons/material'
-import axios from 'axios'
+import request from '@/utils/request'
 
 const props = defineProps<{ host: any }>()
 const message = useMessage()
@@ -151,8 +151,8 @@ const fetchDatabases = async () => {
   if (!props.host) return
   loading.value = true
   try {
-    const res = await axios.post('/api/pgsql/databases', props.host)
-    dbList.value = res.data
+    const res = await request.post('/api/pgsql/databases', props.host)
+    dbList.value = (res as any) || []
   } catch (e) {}
   finally { loading.value = false }
 }
@@ -160,8 +160,8 @@ const fetchDatabases = async () => {
 const fetchUsers = async () => {
   if (!props.host) return
   try {
-    const res = await axios.post('/api/pgsql/users', props.host)
-    userList.value = res.data
+    const res = await request.post('/api/pgsql/users', props.host)
+    userList.value = (res as any) || []
   } catch (e) {}
 }
 
@@ -177,7 +177,7 @@ const handleUpdate = async () => {
   if (!editingDb.value) return
   updating.value = true
   try {
-    await axios({
+    await request({
       method: 'patch',
       url: `/api/pgsql/databases/${editingDb.value.name}`,
       data: {
@@ -189,7 +189,7 @@ const handleUpdate = async () => {
     showEditModal.value = false
     fetchDatabases()
   } catch (e: any) {
-    message.error('更新失败: ' + (e.response?.data?.detail || e.message))
+    // message.error 由 request.ts 处理
   } finally { updating.value = false }
 }
 
@@ -197,7 +197,7 @@ const handleCreate = async () => {
   if (!newDbName.value) return
   creating.value = true
   try {
-    await axios.post('/api/pgsql/databases/create', {
+    await request.post('/api/pgsql/databases/create', {
       config: props.host,
       req: { 
         dbname: newDbName.value,
@@ -210,7 +210,7 @@ const handleCreate = async () => {
     newDbOwner.value = null
     fetchDatabases()
   } catch (e: any) {
-    message.error('失败: ' + (e.response?.data?.detail || e.message))
+    // 
   } finally { creating.value = false }
 }
 
@@ -221,11 +221,11 @@ const handleDrop = (name: string) => {
     positiveText: '确认删除',
     onPositiveClick: async () => {
       try {
-        await axios.delete(`/api/pgsql/databases/${name}`, { data: props.host })
+        await request.delete(`/api/pgsql/databases/${name}`, { data: props.host })
         message.success('已删除')
         fetchDatabases()
       } catch (e: any) {
-        message.error('删除失败')
+        // 
       }
     }
   })

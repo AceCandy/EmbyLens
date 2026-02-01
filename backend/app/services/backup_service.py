@@ -15,6 +15,8 @@ from app.models.backup import BackupHistory
 from app.utils.logger import logger
 from app.core.config_manager import get_config, save_config
 from app.services.notification_service import NotificationService
+from app.services.pgsql_service import PostgresService
+from app.schemas.pgsql import PostgresConfig
 
 class BackupService:
     _scheduler = None
@@ -132,10 +134,47 @@ class BackupService:
             os.makedirs(dst_dir, exist_ok=True)
             
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            base_name = os.path.basename(src.rstrip("/"))
 
-            if is_remote:
+            if mode == "pgsql":
+                # --- PostgreSQL 备份逻辑 ---
+                pgsql_host_id = task.get("pgsql_host_id")
+                db_names = task.get("db_names", [])
+                
+                if not pgsql_host_id:
+                    raise Exception("未指定 PostgreSQL 主机")
+                if not db_names:
+                    raise Exception("未指定要备份的数据库")
+
+                # 获取主机配置
+                pgsql_hosts = config.get("pgsql_hosts", [])
+                host_info = next((h for h in pgsql_hosts if h.get("id") == pgsql_host_id), None)
+                if not host_info:
+                    raise Exception(f"找不到 PostgreSQL 主机配置: {pgsql_host_id}")
+                
+                pgsql_config = PostgresConfig(**host_info)
+                
+                # 执行备份
+                backup_files = []
+                for dbname in db_names:
+                    logger.info(f"📦 [Backup] 正在备份数据库: {dbname}...")
+                    filename = await PostgresService.create_backup(pgsql_config, dbname)
+                    # PostgresService.create_backup 默认存在 data/backups/pg
+                    # 我们需要将其移动到任务指定的 dst_path
+                    src_file = os.path.join("data", "backups", "pg", filename)
+                    dst_file = os.path.join(dst_dir, filename)
+                    shutil.move(src_file, dst_file)
+                    backup_files.append(dst_file)
+                
+                # 如果有多个库，最后打包成一个 (可选，这里先简单记录最后一个或者全部大小)
+                success = True
+                message = f"已成功备份 {len(db_names)} 个数据库: {', '.join(db_names)}"
+                # 对于多文件备份，我们将最后一个作为 output_path 或记录所在目录
+                output_path = dst_dir
+                total_size = sum(os.path.getsize(f) for f in backup_files) / (1024 * 1024)
+            
+            elif is_remote:
                 # --- 远程备份逻辑 ---
+                base_name = os.path.basename(src.rstrip("/")) if src else "remote_backup"
                 hosts = config.get("docker_hosts", [])
                 host_config = next((h for h in hosts if h.get("id") == host_id), None)
                 if not host_config:

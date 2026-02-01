@@ -30,7 +30,7 @@
           </n-space>
         </n-form-item-gi>
         
-        <n-form-item-gi label="存储介质">
+        <n-form-item-gi label="存储介质" v-if="task.mode !== 'pgsql'">
           <n-space vertical :size="4" style="width: 100%">
             <n-select v-model:value="task.storage_type" :options="storageOptions" />
             <n-text depth="3" style="font-size: 12px; line-height: 1.4">
@@ -49,12 +49,32 @@
             ]" />
             <n-text depth="3" style="font-size: 12px; line-height: 1.4">
               <span v-if="task.sync_strategy === 'mirror'">🔄 <b>镜像</b>：目标目录将与源目录完全同步，源端删除的文件，目标端也会被清理。</span>
-              <span v-if="task.sync_strategy === 'incremental'">📥 <b>增量</b>：仅同步新增和修改，目标端已有的文件即使源端删了也会保留。</span>
+              <span v-if="task.sync_strategy === 'incremental'">📥 <b>增量</b>：仅同步新增 and 修改，目标端已有的文件即使源端删了也会保留。</span>
             </n-text>
           </n-space>
         </n-form-item-gi>
 
-        <n-form-item-gi :span="2" :label="task.host_id && task.host_id !== 'local' ? '源路径 (远程)' : '源路径'">
+        <!-- PostgreSQL 字段 -->
+        <template v-if="task.mode === 'pgsql'">
+          <n-form-item-gi :span="2" label="PG 主机">
+            <n-select 
+              v-model:value="task.pgsql_host_id" 
+              :options="pgsqlHosts.map(h => ({ label: `${h.name} (${h.host}:${h.port})`, value: h.id }))" 
+              placeholder="选择已配置的 PostgreSQL 主机"
+            />
+          </n-form-item-gi>
+          <n-form-item-gi :span="2" label="待备份数据库">
+            <n-checkbox-group v-model:value="task.db_names">
+              <n-space item-style="display: flex;">
+                <n-checkbox v-for="db in pgsqlDatabases" :key="db" :value="db" :label="db" />
+              </n-space>
+            </n-checkbox-group>
+            <n-text v-if="pgsqlDatabases.length === 0 && !loadingDatabases" depth="3">请先选择主机</n-text>
+            <n-text v-if="loadingDatabases" depth="3">正在加载数据库列表...</n-text>
+          </n-form-item-gi>
+        </template>
+
+        <n-form-item-gi :span="2" :label="task.host_id && task.host_id !== 'local' ? '源路径 (远程)' : '源路径'" v-if="task.mode !== 'pgsql'">
           <n-input-group>
             <n-input v-model:value="task.src_path" :placeholder="task.host_id && task.host_id !== 'local' ? '远程主机上的绝对路径' : '/app/data'" />
             <n-button v-if="!task.host_id || task.host_id === 'local'" @click="$emit('browse', 'src')">
@@ -111,7 +131,7 @@
           </n-form-item-gi>
         </template>
 
-        <n-form-item-gi :span="2" label="忽略模式">
+        <n-form-item-gi :span="2" label="忽略模式" v-if="task.mode !== 'pgsql'">
           <n-space vertical :size="8" style="width: 100%">
             <n-space :size="4">
               <n-text depth="3" style="font-size: 12px; margin-right: 4px">常用预设:</n-text>
@@ -149,16 +169,17 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { ref, watch, onMounted } from 'vue'
 import { 
   NModal, NForm, NFormItemGi, NInput, NSelect, NInputGroup, NButton, NSlider, 
-  NText, NDynamicInput, NSpace, NGrid, NDivider, NSwitch, NTimePicker, NInputNumber, NTag, NAlert, NIcon 
+  NText, NDynamicInput, NSpace, NGrid, NDivider, NSwitch, NTimePicker, NInputNumber, NTag, NAlert, NIcon, NCheckbox, NCheckboxGroup
 } from 'naive-ui'
 import { 
   FolderOpenOutlined as FolderIcon,
   SaveOutlined as SaveIcon,
   CloseOutlined as CloseIcon
 } from '@vicons/material'
+import { pgsqlApi } from '@/api/pgsql'
 
 const props = defineProps<{
   show: boolean
@@ -172,10 +193,15 @@ const dailyTime = ref('03:00')
 const intervalValue = ref(1)
 const intervalUnit = ref(60) // 默认小时 (60分钟)
 
+const pgsqlHosts = ref<any[]>([])
+const pgsqlDatabases = ref<string[]>([])
+const loadingDatabases = ref(false)
+
 const modeOptions = [
   { label: '7z 压缩', value: '7z' },
   { label: 'Tar.gz 打包', value: 'tar' },
-  { label: '物理增量镜像 (Sync)', value: 'sync' }
+  { label: '物理增量镜像 (Sync)', value: 'sync' },
+  { label: 'PostgreSQL 数据库备份', value: 'pgsql' }
 ]
 
 const storageOptions = [
@@ -200,6 +226,58 @@ const presetPatterns = [
   '__pycache__', '*.pyc', '.git', 'node_modules', 'target', 
   '.vscode', '.idea', 'dist', 'build', '*.log', '.DS_Store'
 ]
+
+const fetchPgHosts = async () => {
+  try {
+    const res = await pgsqlApi.getHosts()
+    pgsqlHosts.value = (res as any) || []
+  } catch (e) {
+    console.error('Failed to fetch PG hosts', e)
+  }
+}
+
+const fetchPgDatabases = async (hostId: string) => {
+  if (!hostId) return
+  const host = pgsqlHosts.value.find(h => h.id === hostId)
+  if (!host) return
+  
+  loadingDatabases.value = true
+  try {
+    const res = await pgsqlApi.getDatabases(host)
+    pgsqlDatabases.value = (res as any).map((db: any) => db.name)
+  } catch (e) {
+    console.error('Failed to fetch PG databases', e)
+    pgsqlDatabases.value = []
+  } finally {
+    loadingDatabases.value = false
+  }
+}
+
+watch(() => props.task.pgsql_host_id, (newVal) => {
+  if (newVal && props.task.mode === 'pgsql') {
+    fetchPgDatabases(newVal)
+  }
+})
+
+watch(() => props.task.mode, (newVal) => {
+  if (newVal === 'pgsql') {
+    if (props.task.pgsql_host_id) {
+      fetchPgDatabases(props.task.pgsql_host_id)
+    }
+    // 设置默认目标路径
+    if (!props.task.dst_path) {
+      props.task.dst_path = 'data/backups/pg'
+    }
+  } else if (newVal === '7z' || newVal === 'tar') {
+    if (!props.task.dst_path) {
+      props.task.dst_path = 'data/backups/files'
+    }
+  }
+})
+
+onMounted(() => {
+  fetchPgHosts()
+})
 
 const handleTogglePattern = (pattern: string, checked: boolean) => {
   const patterns = [...props.task.ignore_patterns]
