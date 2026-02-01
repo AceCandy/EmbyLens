@@ -18,7 +18,7 @@ import json
 
 router = APIRouter()
 
-CURRENT_VERSION = "v2.3.6"
+CURRENT_VERSION = "v2.3.7"
 DOCKER_IMAGE = "pipi20xx/lens"
 
 @router.get("/version")
