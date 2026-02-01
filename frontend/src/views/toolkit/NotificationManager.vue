@@ -26,7 +26,7 @@
               <template #header-extra>
                 <n-button type="primary" size="small" @click="handleAddBot">
                   <template #icon>
-                    <n-icon><add-icon /></n-icon>
+                    <n-icon><AddIcon /></n-icon>
                   </template>
                   添加新机器人
                 </n-button>
@@ -70,7 +70,7 @@
       </n-grid>
     </n-space>
 
-    <!-- 机器人编辑弹窗 (保持原样，仅做样式微调) -->
+    <!-- 机器人编辑弹窗 -->
     <n-modal v-model:show="showEditModal" preset="card" :title="editingBot.id ? '编辑机器人' : '添加机器人'" style="width: 600px">
       <n-form
         ref="formRef"
@@ -125,8 +125,14 @@
       </n-form>
       <template #footer>
         <n-space justify="end">
-          <n-button size="small" @click="showEditModal = false">取消</n-button>
-          <n-button size="small" type="primary" :loading="saving" @click="handleSaveBot">确定保存</n-button>
+          <n-button size="small" @click="showEditModal = false">
+            <template #icon><n-icon><CloseIcon /></n-icon></template>
+            取消
+          </n-button>
+          <n-button size="small" type="primary" :loading="saving" @click="handleSaveBot">
+            <template #icon><n-icon><SaveIcon /></n-icon></template>
+            确定保存
+          </n-button>
         </n-space>
       </template>
     </n-modal>
@@ -142,9 +148,16 @@
 import { onMounted, h } from 'vue'
 import { 
   NButton, NSpace, NTag, NPopconfirm, NCard, NSwitch, NAlert, NDataTable, NModal, NForm, 
-  NFormItem, NInput, NSelect, NH2, NText, NGrid, NGi, DataTableColumns, useMessage 
+  NFormItem, NInput, NSelect, NH2, NText, NGrid, NGi, DataTableColumns, useMessage, NIcon 
 } from 'naive-ui'
-import { AddOutlined as AddIcon } from '@vicons/material'
+import { 
+  AddOutlined as AddIcon,
+  SendOutlined as TestIcon,
+  EditOutlined as EditIcon,
+  DeleteOutlined as DeleteIcon,
+  SaveOutlined as SaveIcon,
+  CloseOutlined as CloseIcon
+} from '@vicons/material'
 
 // 导入提取的逻辑
 import { useNotificationManager } from './notification/hooks/useNotificationManager'
@@ -173,12 +186,16 @@ const typeOptions = [
 
 const eventOptions = NOTIFICATION_EVENTS
 
+const renderIcon = (icon: any) => {
+  return () => h(NIcon, null, { default: () => h(icon) })
+}
+
 const columns: DataTableColumns<NotificationBot> = [
   { title: '机器人名称', key: 'name' },
   { 
     title: '状态', 
     key: 'enabled',
-    width: 80,
+    width: 100,
     render(row) {
       return h(NTag, { type: row.enabled ? 'success' : 'default', size: 'small', round: true, quaternary: true }, { default: () => row.enabled ? '运行中' : '已停用' })
     }
@@ -195,14 +212,36 @@ const columns: DataTableColumns<NotificationBot> = [
   {
     title: '操作',
     key: 'actions',
-    width: 180,
+    width: 240,
     render(row) {
       return h(NSpace, { justify: 'end' }, {
         default: () => [
-          h(NButton, { size: 'tiny', tertiary: true, onClick: () => handleTestBot(row.id) }, { default: () => '测试' }),
-          h(NButton, { size: 'tiny', onClick: () => handleEditBot(row) }, { default: () => '编辑' }),
+          h(NButton, { 
+            size: 'tiny', 
+            type: 'info',
+            secondary: true, 
+            onClick: () => handleTestBot(row.id) 
+          }, { 
+            icon: renderIcon(TestIcon),
+            default: () => '测试' 
+          }),
+          h(NButton, { 
+            size: 'tiny', 
+            secondary: true,
+            onClick: () => handleEditBot(row) 
+          }, { 
+            icon: renderIcon(EditIcon),
+            default: () => '编辑' 
+          }),
           h(NPopconfirm, { onPositiveClick: () => handleDeleteBot(row.id) }, {
-            trigger: () => h(NButton, { size: 'tiny', type: 'error', quaternary: true }, { default: () => '删除' }),
+            trigger: () => h(NButton, { 
+              size: 'tiny', 
+              type: 'error', 
+              secondary: true 
+            }, { 
+              icon: renderIcon(DeleteIcon),
+              default: () => '删除' 
+            }),
             default: () => '确定删除该机器人吗？'
           })
         ]
@@ -215,5 +254,4 @@ onMounted(fetchSettings)
 </script>
 
 <style scoped>
-/* 使用全局 toolkit-container 样式，移除局部固定宽度 */
 </style>

@@ -160,11 +160,21 @@ const columns = [
     width: 220,
     render: (row: any) => h(NSpace, {}, {
       default: () => [
-        h(NButton, { size: 'small', secondary: true, type: 'info', onClick: () => openEditModal(row) }, { 
+        h(NButton, { 
+          size: 'small', 
+          secondary: true, 
+          type: 'info', 
+          onClick: () => openEditModal(row) 
+        }, { 
           icon: renderIcon(EditIcon),
           default: () => '编辑' 
         }),
-        h(NButton, { size: 'small', type: 'error', ghost: true, onClick: () => handleDrop(row.username) }, { 
+        h(NButton, { 
+          size: 'small', 
+          secondary: true, 
+          type: 'error', 
+          onClick: () => handleDrop(row.username) 
+        }, { 
           icon: renderIcon(DeleteIcon),
           default: () => '删除' 
         })

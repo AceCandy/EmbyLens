@@ -17,7 +17,10 @@
                     <n-form-item label="演员姓名">
                       <n-input v-model:value="searchQuery" placeholder="中文或英文姓名..." @keyup.enter="handleSearch" />
                     </n-form-item>
-                    <n-button block type="primary" secondary :loading="searchLoading" @click="handleSearch">执行全局检索</n-button>
+                    <n-button block type="primary" secondary :loading="searchLoading" @click="handleSearch">
+                      <template #icon><n-icon><SearchIcon /></n-icon></template>
+                      执行搜索
+                    </n-button>
                   </n-form>
                   
                   <div v-if="searchResults.length > 0" class="search-results-list">
@@ -40,7 +43,10 @@
                     <n-form-item label="抓取语言 / 模式">
                       <n-select v-model:value="detailLanguage" :options="languageOptions" filterable tag />
                     </n-form-item>
-                    <n-button block type="primary" :loading="analyzeLoading" @click="handleAnalyze">启动深度分析</n-button>
+                    <n-button block type="primary" :loading="analyzeLoading" @click="handleAnalyze">
+                      <template #icon><n-icon><LabIcon /></n-icon></template>
+                      执行分析
+                    </n-button>
                   </n-form>
                 </n-tab-pane>
               </n-tabs>
@@ -168,7 +174,9 @@ import {
 } from 'naive-ui'
 import { 
   TerminalOutlined as CodeIcon,
-  AssignmentIndOutlined as ReportIcon
+  AssignmentIndOutlined as ReportIcon,
+  SearchOutlined as SearchIcon,
+  ScienceOutlined as LabIcon
 } from '@vicons/material'
 
 // 导入提取的逻辑

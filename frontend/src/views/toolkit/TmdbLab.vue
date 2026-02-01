@@ -25,7 +25,10 @@
                         <n-select v-model:value="searchForm.language" :options="languageOptions" filterable tag />
                       </n-form-item-gi>
                     </n-grid>
-                    <n-button block type="primary" secondary :loading="searchLoading" @click="handleSearch">搜索</n-button>
+                    <n-button block type="primary" secondary :loading="searchLoading" @click="handleSearch">
+                      <template #icon><n-icon><SearchIcon /></n-icon></template>
+                      执行搜索
+                    </n-button>
                   </n-form>
                   <div v-if="searchResults.length > 0" class="search-results-list">
                     <n-divider title-placement="left">搜索结果</n-divider>
@@ -55,7 +58,10 @@
                         <n-text depth="3">递归获取所有季和集详情</n-text>
                       </n-space>
                     </n-form-item>
-                    <n-button block type="primary" :loading="detailLoading" @click="handleFetchDetail">启动抓取</n-button>
+                    <n-button block type="primary" :loading="detailLoading" @click="handleFetchDetail">
+                      <template #icon><n-icon><LabIcon /></n-icon></template>
+                      执行抓取
+                    </n-button>
                   </n-form>
                 </n-tab-pane>
               </n-tabs>
@@ -234,7 +240,10 @@
           <n-code :code="JSON.stringify(jsonModal.data, null, 2)" language="json" word-wrap />
         </div>
         <template #footer>
-          <n-button block type="primary" secondary @click="copyRawJson">复制 JSON 数据</n-button>
+          <n-button block type="primary" secondary @click="copyRawJson">
+            <template #icon><n-icon><CopyIcon /></n-icon></template>
+            复制 JSON 数据
+          </n-button>
         </template>
       </n-modal>
     </n-space>
@@ -256,7 +265,10 @@ import {
   LabelOutlined as AliasIcon,
   BusinessOutlined as CompanyIcon,
   StyleOutlined as GenreIcon,
-  LocalOfferOutlined as TagIcon
+  LocalOfferOutlined as TagIcon,
+  SearchOutlined as SearchIcon,
+  ScienceOutlined as LabIcon,
+  ContentCopyOutlined as CopyIcon
 } from '@vicons/material'
 
 // 导入提取的逻辑

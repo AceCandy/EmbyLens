@@ -18,7 +18,10 @@
               <n-input-group>
                 <n-input-group-label style="width: 140px">Emby 单集 ID</n-input-group-label>
                 <n-input v-model:value="episodeId" placeholder="输入 Episode ID (例如: 108)" @keyup.enter="handleLookup" />
-                <n-button type="primary" @click="handleLookup" :loading="loading">立即追溯</n-button>
+                <n-button type="primary" @click="handleLookup" :loading="loading">
+                  <template #icon><n-icon><SearchIcon /></n-icon></template>
+                  执行反查
+                </n-button>
               </n-input-group>
             </n-card>
 
@@ -36,7 +39,10 @@
                 <n-descriptions-item label="媒体类型">{{ result.item_type }}</n-descriptions-item>
               </n-descriptions>
               <template #footer>
-                <n-button quaternary size="tiny" block @click="copyTmdb">复制 TMDB ID</n-button>
+                <n-button secondary size="tiny" block @click="copyTmdb">
+                  <template #icon><n-icon><CopyIcon /></n-icon></template>
+                  复制数据
+                </n-button>
               </template>
             </n-card>
             <n-empty v-else description="请输入单集 ID 并开始追溯" />
@@ -64,8 +70,12 @@
 import { ref } from 'vue'
 import { 
   useMessage, NSpace, NH2, NText, NCard, NInput, NButton, NInputGroup, 
-  NInputGroupLabel, NCode, NTag, NDescriptions, NDescriptionsItem, NGi, NGrid, NEmpty
+  NInputGroupLabel, NCode, NTag, NDescriptions, NDescriptionsItem, NGi, NGrid, NEmpty, NIcon
 } from 'naive-ui'
+import { 
+  SearchOutlined as SearchIcon,
+  ContentCopyOutlined as CopyIcon
+} from '@vicons/material'
 import axios from 'axios'
 import { copyText } from '@/utils/clipboard'
 

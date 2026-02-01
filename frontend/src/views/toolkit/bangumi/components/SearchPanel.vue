@@ -18,7 +18,8 @@
         :loading="loading" 
         @click="handleSearch"
       >
-        搜索条目
+        <template #icon><n-icon><SearchIcon /></n-icon></template>
+        执行搜索
       </n-button>
     </n-form>
 
@@ -37,7 +38,8 @@
 </template>
 
 <script setup lang="ts">
-import { NForm, NFormItem, NInput, NSelect, NButton, NDivider, NList, NListItem, NThing } from 'naive-ui'
+import { NForm, NFormItem, NInput, NSelect, NButton, NDivider, NList, NListItem, NThing, NIcon } from 'naive-ui'
+import { SearchOutlined as SearchIcon } from '@vicons/material'
 
 defineProps<{
   searchForm: any

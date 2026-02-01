@@ -124,7 +124,7 @@ const columns = [
         default: () => [
           h(
             NButton, 
-            { size: 'small', type: 'primary', ghost: true, onClick: () => handleEdit(row) }, 
+            { size: 'small', type: 'primary', secondary: true, onClick: () => handleEdit(row) }, 
             { 
               icon: renderIcon(EditIcon),
               default: () => '编辑' 
@@ -132,7 +132,7 @@ const columns = [
           ),
           h(
             NButton, 
-            { size: 'small', type: 'error', ghost: true, onClick: () => handleDelete(row.id) }, 
+            { size: 'small', type: 'error', secondary: true, onClick: () => handleDelete(row.id) }, 
             { 
               icon: renderIcon(DeleteIcon),
               default: () => '移除' 

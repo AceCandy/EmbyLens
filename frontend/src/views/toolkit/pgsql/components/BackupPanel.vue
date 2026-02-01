@@ -164,7 +164,7 @@ const columns = [
         h(NButton, {
           size: 'small',
           type: 'error',
-          ghost: true,
+          secondary: true,
           onClick: () => handleDelete(row.filename)
         }, { 
           icon: renderIcon(DeleteIcon),

@@ -28,7 +28,10 @@
                     <n-form-item label="Subject ID (条目 ID)">
                       <n-input v-model:value="form.subject_id" placeholder="例如: 253, 302506..." @keyup.enter="handleFetchAll" />
                     </n-form-item>
-                    <n-button block type="primary" :loading="loading" @click="handleFetchAll">执行全量抓取</n-button>
+                    <n-button block type="primary" :loading="loading" @click="handleFetchAll">
+                      <template #icon><n-icon><LabIcon /></n-icon></template>
+                      执行抓取
+                    </n-button>
                   </n-form>
                 </n-tab-pane>
               </n-tabs>
@@ -79,7 +82,10 @@
           <n-code :code="JSON.stringify(jsonModal.data, null, 2)" language="json" word-wrap />
         </div>
         <template #footer>
-          <n-button block type="primary" secondary @click="copyRawJson">复制 JSON 数据</n-button>
+          <n-button block type="primary" secondary @click="copyRawJson">
+            <template #icon><n-icon><CopyIcon /></n-icon></template>
+            复制 JSON 数据
+          </n-button>
         </template>
       </n-modal>
     </n-space>
@@ -90,8 +96,12 @@
 import { reactive, ref } from 'vue'
 import { 
   NSpace, NH2, NText, NCard, NInput, NButton, NEmpty, NGrid, NGi, NForm, NFormItem, NModal, NCode, useMessage,
-  NTabs, NTabPane
+  NTabs, NTabPane, NIcon
 } from 'naive-ui'
+import { 
+  ScienceOutlined as LabIcon,
+  ContentCopyOutlined as CopyIcon
+} from '@vicons/material'
 import { useBangumi } from './bangumi/useBangumi'
 import { copyElementContent } from '@/utils/clipboard'
 import SubjectCard from './bangumi/components/SubjectCard.vue'

@@ -18,14 +18,20 @@
               <n-input-group>
                 <n-input-group-label style="width: 140px">Emby Item ID</n-input-group-label>
                 <n-input v-model:value="itemId" placeholder="输入 ID，例如: 12345" @keyup.enter="fetchInfo" />
-                <n-button type="primary" @click="fetchInfo" :loading="loading">抓取元数据</n-button>
+                <n-button type="primary" @click="fetchInfo" :loading="loading">
+                  <template #icon><n-icon><LabIcon /></n-icon></template>
+                  执行抓取
+                </n-button>
               </n-input-group>
             </n-card>
 
             <!-- 2. 结果展示 -->
             <n-card v-if="itemData" title="抓取结果 (Raw Metadata JSON)" size="small" segmented>
               <template #header-extra>
-                <n-button quaternary size="tiny" @click="copyData">一键复制数据</n-button>
+                <n-button secondary size="tiny" @click="copyData">
+                  <template #icon><n-icon><CopyIcon /></n-icon></template>
+                  复制数据
+                </n-button>
               </template>
               <div class="json-viewer">
                 <n-code :code="JSON.stringify(itemData, null, 2)" language="json" word-wrap />
@@ -56,8 +62,12 @@
 <script setup lang="ts">
 import { 
   useMessage, NSpace, NH2, NText, NCard, NInput, NButton, NInputGroup, 
-  NInputGroupLabel, NCode, NTag, NEmpty, NP, NGrid, NGi
+  NInputGroupLabel, NCode, NTag, NEmpty, NGrid, NGi, NIcon
 } from 'naive-ui'
+import { 
+  ScienceOutlined as LabIcon,
+  ContentCopyOutlined as CopyIcon
+} from '@vicons/material'
 import { copyElementContent } from '@/utils/clipboard'
 
 // 导入提取的逻辑

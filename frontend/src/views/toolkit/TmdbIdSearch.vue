@@ -27,7 +27,10 @@
                   </n-form-item-gi>
                 </n-grid>
                 <n-space justify="end">
-                  <n-button type="primary" @click="handleSearch" :loading="loading">启动全量检索</n-button>
+                  <n-button type="primary" @click="handleSearch" :loading="loading">
+                    <template #icon><n-icon><SearchIcon /></n-icon></template>
+                    执行搜索
+                  </n-button>
                 </n-space>
               </n-form>
             </n-card>
@@ -173,7 +176,10 @@
           <n-code :code="JSON.stringify(jsonModal.data, null, 2)" language="json" word-wrap />
         </div>
         <template #footer>
-          <n-button block type="primary" secondary @click="copyRawJson">复制 JSON 数据</n-button>
+          <n-button block type="primary" secondary @click="copyRawJson">
+            <template #icon><n-icon><CopyIcon /></n-icon></template>
+            复制数据
+          </n-button>
         </template>
       </n-modal>
     </n-space>
@@ -188,7 +194,11 @@ import {
   NCollapseItem, NGrid, NGi, NFormItemGi, NForm, NDescriptions, 
   NDescriptionsItem, NDivider, NList, NListItem, NRate, NModal, NP, NIcon, NThing 
 } from 'naive-ui'
-import { TerminalOutlined as CodeIcon } from '@vicons/material'
+import { 
+  TerminalOutlined as CodeIcon,
+  SearchOutlined as SearchIcon,
+  ContentCopyOutlined as CopyIcon
+} from '@vicons/material'
 import axios from 'axios'
 
 const message = useMessage()
@@ -203,7 +213,7 @@ const showJson = (item: any) => { jsonModal.data = item; jsonModal.show = true; 
 const copyRawJson = () => { 
   const text = JSON.stringify(jsonModal.data, null, 2);
   if (copyToClipboard(text)) {
-    message.success('JSON 数据已成功复制到剪贴板');
+    message.success('数据已成功复制到剪贴板');
   } else {
     message.error('复制失败，请手动选择文字复制');
   }

@@ -136,7 +136,7 @@ const columns = [
         h(NButton, {
           size: 'small',
           type: 'error',
-          ghost: true,
+          secondary: true,
           onClick: () => handleDrop(row.name)
         }, { 
           icon: renderIcon(DeleteIcon),
