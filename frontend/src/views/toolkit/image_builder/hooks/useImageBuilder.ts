@@ -1,7 +1,8 @@
-import { ref, reactive } from 'vue'
+import { ref, reactive, watch } from 'vue'
 import { useMessage, useDialog } from 'naive-ui'
 import { imageBuilderApi } from '@/api/imageBuilder'
 import { dockerApi } from '@/api/docker'
+import { STORAGE_KEYS } from '@/constants/storage'
 
 export function useImageBuilder() {
   const message = useMessage()
@@ -14,14 +15,23 @@ export function useImageBuilder() {
   const registryOptions = ref([])
   const loading = ref(false)
   
-  const projectTags = reactive<Record<string, string>>({})
+  // 从 localStorage 加载持久化的 Tag
+  const savedTags = JSON.parse(localStorage.getItem(STORAGE_KEYS.IMAGE_BUILDER_TAGS) || '{}')
+  const projectTags = reactive<Record<string, string>>(savedTags)
+
+  // 监听 Tag 变化并持久化
+  watch(projectTags, (newTags) => {
+    localStorage.setItem(STORAGE_KEYS.IMAGE_BUILDER_TAGS, JSON.stringify(newTags))
+  }, { deep: true })
 
   const fetchProjects = async () => {
     loading.value = true
     try {
       const data: any = await imageBuilderApi.getProjects()
       projects.value = data
-      data.forEach((p: any) => { if (!projectTags[p.id]) projectTags[p.id] = 'latest' })
+      data.forEach((p: any) => { 
+        if (!projectTags[p.id]) projectTags[p.id] = 'latest' 
+      })
     } finally { loading.value = false }
   }
 

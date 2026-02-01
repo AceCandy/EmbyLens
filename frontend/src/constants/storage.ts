@@ -6,5 +6,6 @@ export const STORAGE_KEYS = {
   SELECTED_PGSQL_HOST: 'lens_selected_pgsql_host',
   CLEANUP_COMMON: 'lens_cleanup_common',
   THEME_TYPE: 'lens_theme_type',
-  AUTH_TOKEN: 'lens_auth_token'
+  AUTH_TOKEN: 'lens_auth_token',
+  IMAGE_BUILDER_TAGS: 'lens_image_builder_tags'
 }
