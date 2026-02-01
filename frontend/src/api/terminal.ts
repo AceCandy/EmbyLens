@@ -38,5 +38,18 @@ export const terminalApi = {
     request.post(`/api/files/${hostId}/action`, { action, path, target }),
   
   chmod: (hostId: number | string, data: any) => 
-    request.post(`/api/files/${hostId}/chmod`, data)
+    request.post(`/api/files/${hostId}/chmod`, data),
+
+  upload: (hostId: number | string, path: string, files: File[]) => {
+    const formData = new FormData()
+    formData.append('path', path)
+    files.forEach(file => formData.append('files', file))
+    return request.post(`/api/files/${hostId}/upload`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+      timeout: 0 // 上传大文件不设超时
+    })
+  },
+
+  downloadUrl: (hostId: number | string, path: string) => 
+    `/api/files/${hostId}/download?path=${encodeURIComponent(path)}`
 }

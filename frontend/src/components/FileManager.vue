@@ -22,6 +22,10 @@
         </n-space>
 
         <n-space>
+          <n-button size="small" type="success" secondary @click="triggerUpload">
+            <template #icon><n-icon><UploadIcon /></n-icon></template>
+            上传文件
+          </n-button>
           <n-button size="small" type="primary" secondary @click="showMkdirModal = true">
             <template #icon><n-icon><FolderAddIcon /></n-icon></template>
             新建文件夹
@@ -33,6 +37,15 @@
         </n-space>
       </n-space>
     </div>
+
+    <!-- 隐藏的上传控件 -->
+    <input 
+      type="file" 
+      multiple 
+      ref="fileInputRef" 
+      style="display: none" 
+      @change="onFileChange" 
+    />
 
     <!-- 内容列表 -->
     <div class="fm-content" @click="selectedPath = null">
@@ -138,7 +151,9 @@ import {
   ContentCopyOutlined as CopyIcon,
   ContentPasteOutlined as PasteIcon,
   ContentCutOutlined as CutIcon,
-  LinkOutlined as LinkIcon
+  LinkOutlined as LinkIcon,
+  FileUploadOutlined as UploadIcon,
+  FileDownloadOutlined as DownloadIcon
 } from '@vicons/material'
 
 import { useFileManager } from './file-manager/useFileManager'
@@ -158,8 +173,22 @@ const {
   showPermissionModal, showEditor, showMkdirModal, showMkfileModal, activeItem, newDirName, newFileName,
   clipboard,
   browse, jumpTo, handleAction, openEditor, onMkdir, selectItem, 
-  copyPath, handleCopy, handlePaste, createFile
+  copyPath, handleCopy, handlePaste, createFile, handleUpload, handleDownload
 } = useFileManager(props)
+
+const fileInputRef = ref<HTMLInputElement | null>(null)
+
+const triggerUpload = () => {
+  fileInputRef.value?.click()
+}
+
+const onFileChange = (e: Event) => {
+  const target = e.target as HTMLInputElement
+  if (target.files && target.files.length > 0) {
+    handleUpload(Array.from(target.files))
+    target.value = '' // 清空以便下次触发
+  }
+}
 
 // 组件内仅保留 UI 交互相关的状态
 const showContextMenu = ref(false)
@@ -218,6 +247,7 @@ const contextMenuOptions = computed(() => {
     { label: '复制', key: 'copy', icon: () => h(NIcon, null, { default: () => h(CopyIcon) }) },
     { label: '剪切', key: 'cut', icon: () => h(NIcon, null, { default: () => h(CutIcon) }) },
     { label: '复制完整路径', key: 'copyPath', icon: () => h(NIcon, null, { default: () => h(LinkIcon) }) },
+    { label: '下载文件', key: 'download', disabled: item.is_dir, icon: () => h(NIcon, null, { default: () => h(DownloadIcon) }) },
     { type: 'divider', key: 'd2' },
     { label: '重命名', key: 'rename', icon: () => h(NIcon, null, { default: () => h(RenameIcon) }) },
     { label: '权限设置', key: 'chmod', icon: () => h(NIcon, null, { default: () => h(LockIcon) }) },
@@ -241,6 +271,7 @@ const onContextMenuSelect = (key: string) => {
   if (key === 'open') handleDoubleClick(item)
   else if (key === 'copy') handleCopy(item, 'copy')
   else if (key === 'cut') handleCopy(item, 'cut')
+  else if (key === 'download') handleDownload(item)
   else if (key === 'paste') handlePaste()
   else if (key === 'mkdir') showMkdirModal.value = true
   else if (key === 'mkfile') showMkfileModal.value = true

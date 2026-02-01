@@ -128,6 +128,61 @@ class FileService:
         finally:
             sftp.close()
 
+    async def upload_file(self, path: str, file_obj):
+        """上传二进制文件"""
+        if self.mode == 'local':
+            os.makedirs(os.path.dirname(path), exist_ok=True)
+            with open(path, 'wb') as f:
+                # 假设 file_obj 是一个具有 read 方法的文件类对象
+                while chunk := await file_obj.read(1024 * 1024): # 1MB chunks
+                    f.write(chunk)
+            return True
+        else:
+            return await asyncio.to_thread(self._sftp_upload, path, file_obj)
+
+    def _sftp_upload(self, path, file_obj):
+        sftp = self.ssh_client.open_sftp()
+        try:
+            parent = os.path.dirname(path).replace("\\", "/")
+            try:
+                sftp.stat(parent)
+            except IOError:
+                self.ssh_client.exec_command(f"mkdir -p '{parent}'")
+            
+            with sftp.file(path, 'wb') as f:
+                # 同步读取并写入
+                while chunk := file_obj.file.read(1024 * 1024):
+                    f.write(chunk)
+            return True
+        finally:
+            sftp.close()
+
+    async def download_file(self, path: str):
+        """下载二进制文件 (返回文件路径或生成器)"""
+        if self.mode == 'local':
+            if not os.path.exists(path):
+                raise FileNotFoundError("File not found")
+            return path
+        else:
+            # 对于 SSH，我们需要先拉取到本地临时目录，或者使用流式传输
+            # 这里为了简单，先返回一个本地临时路径
+            return await asyncio.to_thread(self._sftp_download_temp, path)
+
+    def _sftp_download_temp(self, path):
+        import tempfile
+        sftp = self.ssh_client.open_sftp()
+        try:
+            # 创建临时文件
+            suffix = os.path.splitext(path)[1]
+            tmp = tempfile.NamedTemporaryFile(delete=False, suffix=suffix)
+            tmp_path = tmp.name
+            tmp.close()
+            
+            sftp.get(path, tmp_path)
+            return tmp_path
+        finally:
+            sftp.close()
+
     async def file_action(self, action, path, target=None):
         logger.info(f"[FileService] Action: {action}, Path: {path}, Target: {target}")
         if self.mode == 'local':

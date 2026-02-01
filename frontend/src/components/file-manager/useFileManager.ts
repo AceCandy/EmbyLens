@@ -107,6 +107,44 @@ export function useFileManager(props: { hostId: number | string, provider: FileP
     }
   }
 
+  const handleUpload = async (files: File[]) => {
+    if (!files || files.length === 0) return
+    loading.value = true
+    try {
+      // 这里的 provider 应该是 terminalApi，它现在有了 upload 方法
+      if (typeof (props.provider as any).upload === 'function') {
+        await (props.provider as any).upload(props.hostId, currentPath.value, files)
+        message.success('上传成功')
+        browse(currentPath.value)
+      } else {
+        message.error('当前 Provider 不支持上传')
+      }
+    } catch (e: any) {
+      message.error('上传失败: ' + (e.response?.data?.detail || e.message))
+    } finally {
+      loading.value = false
+    }
+  }
+
+  const handleDownload = (item: FileItem) => {
+    if (item.is_dir) {
+      message.warning('暂不支持下载文件夹')
+      return
+    }
+    if (typeof (props.provider as any).downloadUrl === 'function') {
+      const url = (props.provider as any).downloadUrl(props.hostId, item.path)
+      // 使用隐藏的 a 标签触发下载，避免被拦截
+      const link = document.createElement('a')
+      link.href = url
+      link.download = item.name
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+    } else {
+      message.error('当前 Provider 不支持下载')
+    }
+  }
+
   const onMkdir = async () => {
     if (!newDirName.value) return
     try {
@@ -170,6 +208,6 @@ export function useFileManager(props: { hostId: number | string, provider: FileP
     showPermissionModal, showEditor, showMkdirModal, showMkfileModal, activeItem, newDirName, newFileName,
     clipboard,
     browse, jumpTo, handleAction, openEditor, onMkdir, getParentPath, selectItem,
-    copyPath, handleCopy, handlePaste, createFile
+    copyPath, handleCopy, handlePaste, createFile, handleUpload, handleDownload
   }
 }
