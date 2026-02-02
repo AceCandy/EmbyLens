@@ -1,5 +1,5 @@
 <template>
-  <n-modal v-model:show="show" preset="card" title="Docker 主机管理" style="width: 600px">
+  <n-modal v-model:show="show" preset="card" title="Docker 主机管理" style="width: 800px">
     <n-space vertical>
       <n-button type="primary" block @click="handleAddHost">
         <template #icon><n-icon><AddIcon /></n-icon></template>
@@ -34,7 +34,7 @@
   </n-modal>
 
   <!-- 编辑弹窗 -->
-  <n-modal v-model:show="showEditModal" preset="card" :title="editHostForm.id ? '编辑主机' : '添加主机'" style="width: 500px">
+  <n-modal v-model:show="showEditModal" preset="card" :title="editHostForm.id ? '编辑主机' : '添加主机'" style="width: 700px">
     <n-form :model="editHostForm" label-placement="left" label-width="100">
       <!-- ... (表单项保持不变) ... -->
       <n-form-item label="名称"><n-input v-model:value="editHostForm.name" /></n-form-item>

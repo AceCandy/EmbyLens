@@ -4,7 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from app.db.session import get_db
 from app.models.user import User
-from app.utils.auth import verify_password, create_access_token, decode_access_token, get_password_hash
+from app.utils.auth import verify_password, create_access_token, decode_access_token, get_password_hash, get_current_user
 from app.utils.audit import add_audit_log
 from app.utils.time import get_local_time
 from app.schemas.auth import LoginRequest, PasswordChangeRequest, TokenResponse
@@ -130,24 +130,9 @@ async def get_auth_status():
     return {"ui_auth_enabled": ui_auth_enabled}
 
 @router.get("/me", summary="获取当前用户信息")
-async def get_me(request: Request, db: AsyncSession = Depends(get_db)):
-    # 检查是否开启了 UI 认证
-    ui_auth_enabled_val = await ConfigService.get("ui_auth_enabled", True)
-    ui_auth_enabled = ui_auth_enabled_val is True or str(ui_auth_enabled_val).lower() == "true"
-    
-    auth_header = request.headers.get("Authorization")
-    token = auth_header.replace("Bearer ", "") if auth_header and auth_header.startswith("Bearer ") else None
-    
-    if token:
-        payload = decode_access_token(token)
-        if payload and payload.get("type") != "2fa_pending":
-            username = payload.get("sub")
-            result = await db.execute(select(User).where(User.username == username))
-            user = result.scalars().first()
-            if user:
-                return {"username": user.username, "is_otp_enabled": user.is_otp_enabled, "last_login": user.last_login}
-
-    if not ui_auth_enabled:
-        return {"username": "admin (免密模式)", "is_otp_enabled": False, "last_login": None}
-    
-    raise HTTPException(status_code=401, detail="Not authenticated")
+async def get_me(user: User = Depends(get_current_user)):
+    return {
+        "username": user.username, 
+        "is_otp_enabled": user.is_otp_enabled, 
+        "last_login": user.last_login
+    }

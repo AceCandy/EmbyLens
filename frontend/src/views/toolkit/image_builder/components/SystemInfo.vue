@@ -22,6 +22,12 @@
       <n-grid :cols="2" :x-gap="12" :y-gap="12">
         <n-gi :span="2">
           <n-card title="Docker 服务状态" size="small">
+            <template #header-extra>
+              <n-button size="tiny" quaternary @click="fetchInfo" :loading="loading">
+                <template #icon><n-icon><RefreshIcon /></n-icon></template>
+                重新检测
+              </n-button>
+            </template>
             <n-descriptions :column="2" label-placement="left" bordered>
               <n-descriptions-item label="Docker 版本">
                 <n-space align="center">

@@ -204,7 +204,10 @@ const showHostModal = ref(false)
 const { currentHostPaths, addScanPath, removeScanPath } = useDockerScanPaths(
   selectedHostId, 
   currentHost, 
-  () => composePanelRef.value?.refresh()
+  async () => {
+    await fetchHosts()
+    composePanelRef.value?.refresh()
+  }
 )
 
 // 5. 文件浏览器逻辑

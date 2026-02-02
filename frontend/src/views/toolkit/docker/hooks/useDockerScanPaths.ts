@@ -5,7 +5,7 @@ import { dockerApi, DockerHost } from '@/api/docker'
 export function useDockerScanPaths(
   selectedHostId: Ref<string | null>, 
   currentHost: Ref<DockerHost | undefined>,
-  onRefresh: () => void
+  onRefresh?: () => void | Promise<void>
 ) {
   const message = useMessage()
 
@@ -21,7 +21,7 @@ export function useDockerScanPaths(
       const updatedHost = { ...currentHost.value, compose_scan_paths: pathList.join(',') }
       await dockerApi.updateHost(selectedHostId.value, updatedHost)
       message.success('已添加扫描路径')
-      onRefresh()
+      if (onRefresh) await onRefresh()
     }
   }
 
@@ -31,7 +31,7 @@ export function useDockerScanPaths(
     const updatedHost = { ...currentHost.value, compose_scan_paths: pathList.join(',') }
     await dockerApi.updateHost(selectedHostId.value, updatedHost)
     message.info('已移除路径')
-    onRefresh()
+    if (onRefresh) await onRefresh()
   }
 
   return {

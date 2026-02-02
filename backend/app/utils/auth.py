@@ -61,26 +61,35 @@ async def get_current_user(request: Request, db: AsyncSession = Depends(get_db))
     token = auth_header.replace("Bearer ", "") if auth_header and auth_header.startswith("Bearer ") else None
     
     if token:
-        # A. 尝试作为 JWT 令牌解析
-        payload = decode_access_token(token)
-        if payload and payload.get("type") != "2fa_pending":
-            username = payload.get("sub")
-            result = await db.execute(select(User).where(User.username == username))
-            user = result.scalars().first()
-            if user:
-                # 校验密码指纹 (如果 Token 带有 ps 字段)
-                token_ps = payload.get("ps")
-                if token_ps:
-                    current_ps = user.hashed_password[:16]
-                    if token_ps != current_ps:
-                        raise HTTPException(status_code=401, detail="Password changed, please re-login")
-                return user
-        
-        # B. 尝试作为 静态 API Token 匹配
-        static_token = await ConfigService.get("api_token")
-        if static_token and token == static_token:
-            result = await db.execute(select(User).where(User.username == "admin"))
-            return result.scalars().first()
+        try:
+            # A. 尝试作为 JWT 令牌解析
+            payload = decode_access_token(token)
+            if payload and payload.get("type") != "2fa_pending":
+                username = payload.get("sub")
+                result = await db.execute(select(User).where(User.username == username))
+                user = result.scalars().first()
+                if user:
+                    # 校验密码指纹 (如果 Token 带有 ps 字段)
+                    token_ps = payload.get("ps")
+                    if token_ps:
+                        current_ps = user.hashed_password[:16]
+                        if token_ps != current_ps:
+                            raise HTTPException(status_code=401, detail="Password changed, please re-login")
+                    return user
+            
+            # B. 尝试作为 静态 API Token 匹配
+            static_token = await ConfigService.get("api_token")
+            if static_token and token == static_token:
+                result = await db.execute(select(User).where(User.username == "admin"))
+                return result.scalars().first()
+        except HTTPException as e:
+            # 仅在非免密模式下透传 401
+            if ui_auth_enabled or api_auth_enabled:
+                raise e
+        except Exception:
+            # Token 解析出错，如果不开启强制认证，可以忽略并走后面的降级逻辑
+            if ui_auth_enabled or api_auth_enabled:
+                raise HTTPException(status_code=401, detail="Invalid token")
 
     # 2. 无效 Token 处理
     if api_auth_enabled or ui_auth_enabled:

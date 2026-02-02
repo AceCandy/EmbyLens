@@ -115,7 +115,10 @@ const dockerStore = useDockerStore()
 
 const containers = computed(() => dockerStore.containers[props.hostId || ''] || [])
 const containerStats = computed(() => dockerStore.containerStats[props.hostId || ''] || {})
-const loading = computed(() => dockerStore.loading[`containers_${props.hostId}`] || false)
+const loading = computed(() => {
+  const cacheKey = `containers_${props.hostId}_${enhancedMode.value}`
+  return dockerStore.loading[cacheKey] || false
+})
 
 const loadingPrune = ref(false)
 const searchQuery = ref('')

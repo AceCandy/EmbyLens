@@ -96,19 +96,20 @@ const columns = [
   { 
     title: '自动运行', 
     key: 'enabled', 
-    width: 150,
-    render: (row) => h(NSpace, { vertical: true, size: 2 }, {
-      default: () => [
-        h(NTag, { 
-          type: row.enabled ? 'success' : 'default', 
-          size: 'small', 
-          bordered: false,
-          round: true
-        }, { default: () => row.enabled ? '自动计划中' : '仅手动' }),
-        h(NText, { depth: 3, style: 'font-size: 11px; padding-left: 4px;' }, { 
-          default: () => formatSchedule(row) 
-        })
-      ]
+    width: 100,
+    render: (row) => h(NTag, { 
+      type: row.enabled ? 'success' : 'default', 
+      size: 'small', 
+      bordered: false,
+      round: true
+    }, { default: () => row.enabled ? '自动计划中' : '仅手动' })
+  },
+  {
+    title: '定时计划',
+    key: 'schedule',
+    width: 120,
+    render: (row) => h(NText, { depth: 3, style: 'font-size: 12px' }, { 
+      default: () => formatSchedule(row) 
     })
   },
   { 
