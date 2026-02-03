@@ -10,8 +10,8 @@
       <div class="host-list">
         <div 
           class="host-item" 
-          :class="{ active: modelValue === 0 }"
-          @click="$emit('update:modelValue', 0)"
+          :class="{ active: activeHostId === 0 }"
+          @click="handleSelect({ id: 0, name: '本地 Shell' })"
         >
           <n-icon :component="LocalIcon" />
           <span class="name">本地 Shell</span>
@@ -20,8 +20,9 @@
           v-for="h in hosts" 
           :key="h.id" 
           class="host-item"
-          :class="{ active: modelValue === h.id }"
-          @click="$emit('update:modelValue', h.id)"
+          :class="{ active: activeHostId === h.id }"
+          @click="handleSelect(h)"
+          @dblclick="handleSelect(h, true)"
         >
           <n-icon :component="HostIcon" />
           <span class="name" :title="h.host">{{ h.name }}</span>
@@ -97,16 +98,16 @@ import {
   DnsOutlined as HostIcon
 } from '@vicons/material';
 
-const props = defineProps<{ modelValue: number }>();
-const emit = defineEmits(['update:modelValue', 'change']);
+const props = defineProps<{ activeHostId: number }>();
+const emit = defineEmits(['select', 'change']);
 
 const hosts = ref<any[]>([]);
-const showModal = ref(false);
-const editingId = ref<number | null>(null);
-const form = ref({ 
-  name: '', host: '', port: 22, username: 'root', 
-  auth_type: 'password', password: '', private_key: '', private_key_password: '' 
-});
+
+// ... existing code ...
+
+const handleSelect = (host: any, forceNew = false) => {
+  emit('select', { ...host, forceNew });
+};
 
 const fetchHosts = async () => {
   const res = await axios.get('/api/terminal/hosts');
