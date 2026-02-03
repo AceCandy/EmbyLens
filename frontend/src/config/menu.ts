@@ -85,7 +85,6 @@ export const groupedMenuOptions = [
     key: 'group-overview',
     children: [
       allMenuItems.find(i => i.key === 'DashboardView'),
-      allMenuItems.find(i => i.key === 'PlaybackReportView'),
       allMenuItems.find(i => i.key === 'SiteNavView'),
     ]
   },
@@ -107,6 +106,7 @@ export const groupedMenuOptions = [
     label: '查询探索',
     key: 'group-search',
     children: [
+      allMenuItems.find(i => i.key === 'PlaybackReportView'),
       allMenuItems.find(i => i.key === 'EmbyItemQueryView'),
       allMenuItems.find(i => i.key === 'TmdbReverseLookupView'),
       allMenuItems.find(i => i.key === 'TmdbIdSearchView'),

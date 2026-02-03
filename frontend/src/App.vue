@@ -25,7 +25,7 @@ import AppLogo from './components/AppLogo.vue'
 import LogConsole from './components/LogConsole.vue'
 import MenuManagerModal from './components/MenuManagerModal.vue'
 import LoginView from './views/Login.vue'
-import {
+import { 
   currentViewKey, 
   activeGroupKey,
   isLogConsoleOpen, 
@@ -35,9 +35,11 @@ import {
   menuLayout,
   username,
   logout,
+  loginSuccess,
   initMenuSettingsFromBackend,
   isHeaderSticky
 } from './store/navigationStore'
+
 import { useTheme } from './hooks/useTheme'
 import { viewMap } from './config/views'
 import { allMenuItems, SettingIcon, ConsoleIcon, ThemeIcon } from './config/menu'
@@ -171,7 +173,21 @@ onMounted(async () => {
     const res = await axios.get('/api/auth/status')
     const enabled = res.data.ui_auth_enabled === true || res.data.ui_auth_enabled === 'true'
     uiAuthEnabled.value = enabled
-    if (!enabled) { isLoggedIn.value = true }
+    
+    // 如果是免密模式，自动尝试获取 guest token
+    if (!enabled) {
+      try {
+        const loginRes = await axios.post('/api/auth/guest_login')
+        if (loginRes.data.access_token) {
+          loginSuccess(loginRes.data.access_token, loginRes.data.username)
+        } else {
+          isLoggedIn.value = true // 兜底
+        }
+      } catch (e) {
+        console.error('Guest login failed:', e)
+        isLoggedIn.value = true // 降级处理
+      }
+    }
   } catch (err) { }
 
   if (isLoggedIn.value) {

@@ -90,6 +90,7 @@ export const defaultLayout: MenuGroup[] = [
     visible: true,
     type: 'group',
     items: [
+      'PlaybackReportView',
       'EmbyItemQueryView', 
       'TmdbReverseLookupView', 
       'TmdbIdSearchView',

@@ -129,6 +129,22 @@ async def get_auth_status():
     ui_auth_enabled = val is True or str(val).lower() == "true"
     return {"ui_auth_enabled": ui_auth_enabled}
 
+@router.post("/guest_login", response_model=TokenResponse, summary="免密登录接口")
+async def guest_login(db: AsyncSession = Depends(get_db)):
+    """在开启免密模式时，提供一种前端自动获取合法 Token 的方式"""
+    val = await ConfigService.get("ui_auth_enabled", True)
+    if val is True or str(val).lower() == "true":
+        raise HTTPException(status_code=403, detail="强制认证模式已开启，无法使用免密登录")
+    
+    # 默认返回 admin 用户的 Token
+    result = await db.execute(select(User).where(User.username == "admin"))
+    user = result.scalars().first()
+    if not user:
+        raise HTTPException(status_code=500, detail="未找到默认管理员账户")
+        
+    access_token = create_access_token(data={"sub": user.username})
+    return {"access_token": access_token, "token_type": "bearer", "username": user.username, "status": "success"}
+
 @router.get("/me", summary="获取当前用户信息")
 async def get_me(user: User = Depends(get_current_user)):
     return {

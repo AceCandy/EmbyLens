@@ -64,13 +64,20 @@ export function usePlaybackReport() {
         summary.user_activity = []
       }
       
-      // 处理各项报表
-      reports.movies = isOk(moviesRes) ? moviesRes : []
-      reports.tvShows = isOk(tvRes) ? tvRes : []
+      // 排序函数：优先按次数，其次按时长
+      const sortByCount = (a: any, b: any) => {
+        const countDiff = (Number(b.count) || 0) - (Number(a.count) || 0)
+        if (countDiff !== 0) return countDiff
+        return (Number(b.time) || 0) - (Number(a.time) || 0)
+      }
+
+      // 处理各项报表并强制排序
+      reports.movies = isOk(moviesRes) ? [...moviesRes].sort(sortByCount) : []
+      reports.tvShows = isOk(tvRes) ? [...tvRes].sort(sortByCount) : []
       reports.devices = isOk(deviceRes) ? deviceRes : []
       reports.methods = isOk(methodRes) ? methodRes : []
       reports.itemTypes = isOk(itemTypeRes) ? itemTypeRes : []
-      reports.users = isOk(userRes) ? userRes : []
+      reports.users = isOk(userRes) ? [...userRes].sort(sortByCount) : []
       reports.hourly = (hourlyRes && !hourlyRes.error) ? hourlyRes : {}
 
       console.log('📊 数据更新完毕:', { 

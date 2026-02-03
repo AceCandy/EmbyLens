@@ -26,5 +26,5 @@ export const viewMap: Record<string, any> = {
   ExternalControlView: defineAsyncComponent(() => import('../views/toolkit/ExternalControl.vue')),
   AccountManagerView: defineAsyncComponent(() => import('../views/toolkit/AccountManager.vue')),
   PlaybackReportView: defineAsyncComponent(() => import('../views/toolkit/playback-report/PlaybackReport.vue')),
-  SiteNavView: defineAsyncComponent(() => import('../views/Dashboard.vue'))
+  SiteNavView: defineAsyncComponent(() => import('../views/toolkit/sitenav/SiteNav.vue'))
 }
