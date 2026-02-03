@@ -40,7 +40,7 @@ export function usePlaybackReport() {
         userRes,
         hourlyRes
       ] = await Promise.all([
-        playbackReportApi.getActivity(days.value),
+        playbackReportApi.getPlaylist(days.value), // 使用 UserPlaylist 接口
         playbackReportApi.getReport('MoviesReport', days.value),
         playbackReportApi.getReport('TvShowsReport', days.value),
         playbackReportApi.getReport('DeviceName/BreakdownReport', days.value),
@@ -50,9 +50,12 @@ export function usePlaybackReport() {
         playbackReportApi.getReport('HourlyReport', days.value)
       ])
 
+      // 调试：打印 Playlist 数据的原始结构
+      console.log('DEBUG: Playlist Data Raw:', activityRes)
+
       const isOk = (res: any) => Array.isArray(res) && !res.error
 
-      // 处理活动数据
+      // 处理 Playlist 数据
       if (Array.isArray(activityRes)) {
         summary.user_activity = [...activityRes]
       } else if (activityRes && Array.isArray(activityRes.Items)) {
@@ -110,7 +113,7 @@ export function usePlaybackReport() {
     const totalDuration = reports.users.reduce((acc, cur) => acc + (Number(cur.time) || 0), 0)
     return {
       totalPlay,
-      totalDuration,
+      totalDuration: Math.round(totalDuration / 60), // 从秒转换为分钟
       userCount: reports.users.length,
       deviceCount: reports.devices.length,
       itemTypeCount: reports.itemTypes.length
