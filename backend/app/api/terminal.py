@@ -94,26 +94,30 @@ async def delete_command(cmd_id: int, db: AsyncSession = Depends(get_db)):
 
 # --- WebSocket 终端连接 ---
 
+from app.core.config_manager import get_config
+
 @router.websocket("/ws/{host_id}")
-async def terminal_websocket(websocket: WebSocket, host_id: int, db: AsyncSession = Depends(get_db)):
+async def terminal_websocket(websocket: WebSocket, host_id: str, db: AsyncSession = Depends(get_db)):
     await websocket.accept()
     
     term_service = TerminalService()
     
     try:
-        if host_id == 0:
+        # 转换判断
+        is_digit = str(host_id).isdigit()
+        
+        if is_digit and int(host_id) == 0:
             # 连接本机
             term_service.open_terminal()
-        else:
-            # 连接远程主机
-            result = await db.execute(select(TerminalHost).where(TerminalHost.id == host_id))
+        elif is_digit:
+            # 连接远程终端主机
+            result = await db.execute(select(TerminalHost).where(TerminalHost.id == int(host_id)))
             host_info = result.scalar_one_or_none()
             if not host_info:
-                await websocket.send_text("\r\n\x1b[31m[Error] Host not found.\x1b[0m\r\n")
+                await websocket.send_text("\r\n\x1b[31m[Error] Host not found in Terminal registry.\x1b[0m\r\n")
                 await websocket.close()
                 return
             
-            # 将模型转为字典供服务使用
             host_dict = {
                 "host": host_info.host,
                 "port": host_info.port,
@@ -123,6 +127,38 @@ async def terminal_websocket(websocket: WebSocket, host_id: int, db: AsyncSessio
                 "private_key": host_info.private_key
             }
             await term_service.connect_ssh(host_dict)
+        else:
+            # 连接 Docker 主机
+            config = get_config()
+            docker_hosts = config.get("docker_hosts", [])
+            docker_host = next((h for h in docker_hosts if h.get("id") == host_id), None)
+            
+            if not docker_host:
+                if host_id == "local":
+                    term_service.open_terminal()
+                else:
+                    await websocket.send_text(f"\r\n\x1b[31m[Error] Docker host {host_id} not found.\x1b[0m\r\n")
+                    await websocket.close()
+                    return
+            elif docker_host.get("type") == "local":
+                term_service.open_terminal()
+            elif docker_host.get("type") == "ssh":
+                host_dict = {
+                    "host": docker_host.get("ssh_host"),
+                    "port": docker_host.get("ssh_port", 22),
+                    "username": docker_host.get("ssh_user", "root"),
+                    "auth_type": "password" if docker_host.get("ssh_pass") else "none",
+                    "password": docker_host.get("ssh_pass"),
+                    "private_key": None
+                }
+                if "ssh_key" in docker_host:
+                    host_dict["auth_type"] = "key"
+                    host_dict["private_key"] = docker_host["ssh_key"]
+                await term_service.connect_ssh(host_dict)
+            else:
+                await websocket.send_text("\r\n\x1b[31m[Error] This Docker host type does not support SSH terminal.\x1b[0m\r\n")
+                await websocket.close()
+                return
 
         # 异步读取输出
         async def read_from_pty():

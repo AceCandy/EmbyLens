@@ -53,7 +53,7 @@
           </n-space>
         </template>
 
-        <n-tabs v-model:value="activeTab" type="line" animated>
+        <n-tabs v-model:value="activeTab" type="line" display-directive="show">
           <n-tab-pane name="containers" tab="容器管理">
             <container-panel ref="containerPanelRef" :host-id="selectedHostId" :hosts="hosts" />
           </n-tab-pane>
@@ -69,6 +69,8 @@
               @request-pick-path="handleRequestPickPath"
             />
           </n-tab-pane>
+          <n-tab-pane name="host-terminal" tab="主机终端" />
+          <n-tab-pane name="host-files" tab="主机文件" />
           <n-tab-pane name="system" tab="环境检测">
             <system-info-panel :host-id="selectedHostId" />
           </n-tab-pane>
@@ -76,6 +78,36 @@
             <maintenance-panel :host-id="selectedHostId" />
           </n-tab-pane>
         </n-tabs>
+
+        <!-- 常驻组件区域：独立于 Tabs 的生命周期 -->
+        <div class="persistent-tab-content">
+          <!-- 主机终端 -->
+          <div v-show="activeTab === 'host-terminal'" class="tab-content-wrapper">
+            <div style="height: 600px; border-radius: 4px; overflow: hidden; background: #000;">
+              <terminal-instance 
+                v-if="selectedHostId"
+                :key="selectedHostId"
+                :host-id="selectedHostId" 
+                :host-name="currentHost?.name || '未知主机'"
+                :visible="activeTab === 'host-terminal'"
+              />
+              <n-empty v-else description="请先选择主机" style="margin-top: 100px" />
+            </div>
+          </div>
+
+          <!-- 主机文件 -->
+          <div v-show="activeTab === 'host-files'" class="tab-content-wrapper">
+            <div style="height: 600px; border: 1px solid var(--border-color); border-radius: 4px; overflow: hidden;">
+              <file-manager 
+                v-if="selectedHostId"
+                :key="selectedHostId"
+                :host-id="selectedHostId" 
+                :provider="terminalApi" 
+              />
+              <n-empty v-else description="请先选择主机" style="margin-top: 100px" />
+            </div>
+          </div>
+        </div>
       </n-card>
     </n-space>
 
@@ -174,6 +206,9 @@ import MaintenancePanel from './docker/components/MaintenancePanel.vue'
 import SystemInfoPanel from './docker/components/SystemInfoPanel.vue'
 import HostManagerModal from './docker/components/HostManagerModal.vue'
 import FileBrowserModal from './docker/components/FileBrowserModal.vue'
+import TerminalInstance from './terminal/components/TerminalInstance.vue'
+import FileManager from '@/components/FileManager.vue'
+import { terminalApi } from '@/api/terminal'
 
 // 导入提取的逻辑 Hooks
 import { useDockerHosts } from './docker/hooks/useDockerHosts'
@@ -226,3 +261,16 @@ const refreshAll = async () => {
 
 onMounted(fetchHosts)
 </script>
+
+<style scoped>
+.persistent-tab-content {
+  margin-top: 12px;
+}
+.tab-content-wrapper {
+  animation: fade-in 0.3s ease-out;
+}
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+</style>

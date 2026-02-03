@@ -10,33 +10,78 @@ from app.models.terminal import TerminalHost
 from app.services.file_service import FileService
 from app.utils.logger import logger
 
+from app.core.config_manager import get_config
+
 router = APIRouter()
 
-async def get_file_service_for_host(host_id: int, db: AsyncSession):
+async def get_file_service_for_host(host_id: str, db: AsyncSession):
     file_service = FileService()
-    if host_id == 0:
-        file_service.mode = 'local'
+    
+    # 转换判断
+    try:
+        # 如果是数字，走原有的 TerminalHost 逻辑
+        if str(host_id).isdigit():
+            h_id = int(host_id)
+            if h_id == 0:
+                file_service.mode = 'local'
+                return file_service
+            
+            result = await db.execute(select(TerminalHost).where(TerminalHost.id == h_id))
+            host_info = result.scalar_one_or_none()
+            if not host_info:
+                raise HTTPException(status_code=404, detail="Host not found in Terminal registry")
+            
+            h_dict = {
+                "host": host_info.host,
+                "port": host_info.port,
+                "username": host_info.username,
+                "auth_type": host_info.auth_type,
+                "password": host_info.password,
+                "private_key": host_info.private_key
+            }
+        else:
+            # 否则去 Docker 配置里找
+            config = get_config()
+            docker_hosts = config.get("docker_hosts", [])
+            docker_host = next((h for h in docker_hosts if h.get("id") == host_id), None)
+            
+            if not docker_host:
+                if host_id == "local":
+                    file_service.mode = 'local'
+                    return file_service
+                raise HTTPException(status_code=404, detail=f"Docker host {host_id} not found")
+            
+            if docker_host.get("type") == "local":
+                file_service.mode = 'local'
+                return file_service
+            
+            if docker_host.get("type") != "ssh":
+                raise HTTPException(status_code=400, detail="Only SSH-based Docker hosts support file management")
+            
+            h_dict = {
+                "host": docker_host.get("ssh_host"),
+                "port": docker_host.get("ssh_port", 22),
+                "username": docker_host.get("ssh_user", "root"),
+                "auth_type": "password" if docker_host.get("ssh_pass") else "none", # 默认密码模式，除非有私钥
+                "password": docker_host.get("ssh_pass"),
+                "private_key": None # Docker 配置暂不支持私钥
+            }
+            # 如果配置里显式写了 auth_type 也可以支持
+            if "ssh_key" in docker_host:
+                h_dict["auth_type"] = "key"
+                h_dict["private_key"] = docker_host["ssh_key"]
+
+        await file_service.connect_ssh(h_dict)
         return file_service
-    
-    result = await db.execute(select(TerminalHost).where(TerminalHost.id == host_id))
-    host_info = result.scalar_one_or_none()
-    if not host_info:
-        raise HTTPException(status_code=404, detail="Host not found")
-    
-    h_dict = {
-        "host": host_info.host,
-        "port": host_info.port,
-        "username": host_info.username,
-        "auth_type": host_info.auth_type,
-        "password": host_info.password,
-        "private_key": host_info.private_key
-    }
-    await file_service.connect_ssh(h_dict)
-    return file_service
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to get file service: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/{host_id}/upload")
 async def file_upload(
-    host_id: int,
+    host_id: str,
     path: str = Form(...),
     files: List[UploadFile] = File(...),
     db: AsyncSession = Depends(get_db)
@@ -52,7 +97,7 @@ async def file_upload(
 
 @router.get("/{host_id}/download")
 async def file_download(
-    host_id: int,
+    host_id: str,
     path: str,
     background_tasks: BackgroundTasks,
     db: AsyncSession = Depends(get_db)
@@ -75,7 +120,7 @@ async def file_download(
         file_service.close()
 
 @router.get("/{host_id}/ls")
-async def file_ls(host_id: int, path: str = "/", db: AsyncSession = Depends(get_db)):
+async def file_ls(host_id: str, path: str = "/", db: AsyncSession = Depends(get_db)):
     file_service = await get_file_service_for_host(host_id, db)
     try:
         items = await file_service.list_dir(path)
@@ -84,7 +129,7 @@ async def file_ls(host_id: int, path: str = "/", db: AsyncSession = Depends(get_
         file_service.close()
 
 @router.get("/{host_id}/read")
-async def file_read(host_id: int, path: str, db: AsyncSession = Depends(get_db)):
+async def file_read(host_id: str, path: str, db: AsyncSession = Depends(get_db)):
     file_service = await get_file_service_for_host(host_id, db)
     try:
         content = await file_service.read_file(path)
@@ -94,7 +139,7 @@ async def file_read(host_id: int, path: str, db: AsyncSession = Depends(get_db))
 
 @router.post("/{host_id}/write")
 async def file_write(
-    host_id: int, 
+    host_id: str, 
     path: str = Body(..., embed=True), 
     content: str = Body(..., embed=True), 
     db: AsyncSession = Depends(get_db)
@@ -108,7 +153,7 @@ async def file_write(
 
 @router.post("/{host_id}/action")
 async def file_action(
-    host_id: int, 
+    host_id: str, 
     action: str = Body(..., embed=True), 
     path: str = Body(..., embed=True), 
     target: str = Body(None, embed=True),
@@ -123,7 +168,7 @@ async def file_action(
 
 @router.post("/{host_id}/chmod")
 async def file_chmod(
-    host_id: int,
+    host_id: str,
     path: str = Body(..., embed=True),
     mode: str = Body(None, embed=True),
     owner: str = Body(None, embed=True),
