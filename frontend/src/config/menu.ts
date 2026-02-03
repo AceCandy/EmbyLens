@@ -23,7 +23,8 @@ import {
   CloudUploadOutlined as BuildIcon,
   NotificationsOutlined as NotificationIcon,
   AdminPanelSettingsOutlined as SecurityIcon,
-  PersonOutlined as ProfileIcon
+  PersonOutlined as ProfileIcon,
+  BarChartOutlined as ChartIcon
 } from '@vicons/material'
 
 // 自定义 Docker 图标组件
@@ -42,6 +43,7 @@ function renderIcon(icon: Component) {
 // 原始扁平化菜单项定义（用于引用和基础数据）
 export const allMenuItems: MenuOption[] = [
   { label: '管理仪表盘', key: 'DashboardView', icon: renderIcon(DashboardIcon) },
+  { label: '播放统计报表', key: 'PlaybackReportView', icon: renderIcon(ChartIcon) },
   { label: '站点导航页', key: 'SiteNavView', icon: renderIcon(LensIcon) },
   
   { label: '重复项清理', key: 'DedupeView', icon: renderIcon(DedupeIcon) },
@@ -83,6 +85,7 @@ export const groupedMenuOptions = [
     key: 'group-overview',
     children: [
       allMenuItems.find(i => i.key === 'DashboardView'),
+      allMenuItems.find(i => i.key === 'PlaybackReportView'),
       allMenuItems.find(i => i.key === 'SiteNavView'),
     ]
   },
