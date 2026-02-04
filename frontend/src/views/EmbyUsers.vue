@@ -12,6 +12,7 @@
             <n-button size="small" @click="loadUsers" :loading="loading">
               刷新用户列表
             </n-button>
+            <EmbyConfigBackupManager category="users" :server-id="activeServerId" @restored="loadUsers" />
           </n-space>
         </template>
         <template #header-extra>
@@ -188,6 +189,7 @@
       <template #action>
         <n-space justify="end">
           <n-button @click="showEditModal = false">取消</n-button>
+          <n-button type="warning" secondary @click="handleBackup" :loading="backingUp">备份当前配置</n-button>
           <n-button type="primary" @click="handleSavePolicy" :loading="savingPolicy">保存设置</n-button>
         </n-space>
       </template>
@@ -206,11 +208,14 @@ import {
   updateEmbyUserPolicy,
   updateEmbyUserPassword
 } from '@/api/embyUsers'
+import { createEmbyBackup } from '@/api/embyBackup'
 import { servers, activeServerId, fetchServers } from '@/store/serverStore'
+import EmbyConfigBackupManager from '@/components/EmbyConfigBackupManager.vue'
 
 const message = useMessage()
 const loading = ref(false)
 const creating = ref(false)
+const backingUp = ref(false)
 const users = ref<any[]>([])
 const newUserName = ref('')
 
@@ -320,6 +325,19 @@ const openEdit = async (user: any) => {
     showEditModal.value = true
   } catch (e) {
     console.error(e)
+  }
+}
+
+const handleBackup = async () => {
+  if (!editingUser.value) return
+  backingUp.value = true
+  try {
+    await createEmbyBackup('users', editingUser.value.Id, editingUser.value.Name, activeServerId.value)
+    message.success('当前配置已备份')
+  } catch (e) {
+    console.error(e)
+  } finally {
+    backingUp.value = false
   }
 }
 

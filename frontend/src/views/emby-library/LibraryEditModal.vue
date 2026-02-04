@@ -43,6 +43,7 @@
     <template #action>
       <n-space justify="end">
         <n-button @click="$emit('update:show', false)">取消</n-button>
+        <n-button type="warning" secondary @click="handleBackup" :loading="backingUp">备份当前配置</n-button>
         <n-button type="primary" @click="handleSave" :loading="loading">保存设置</n-button>
       </n-space>
     </template>
@@ -57,6 +58,7 @@ import MetadataFetchersTab from './tabs/MetadataFetchersTab.vue'
 import ImageSettingsTab from './tabs/ImageSettingsTab.vue'
 import FeatureSwitchesTab from './tabs/FeatureSwitchesTab.vue'
 import { updateEmbyLibrary } from '@/api/embyLibraries'
+import { createEmbyBackup } from '@/api/embyBackup'
 
 const props = defineProps<{
   show: boolean
@@ -67,9 +69,11 @@ const props = defineProps<{
 const emit = defineEmits(['update:show', 'saved'])
 const message = useMessage()
 const loading = ref(false)
+const backingUp = ref(false)
 const localData = ref<any>({ LibraryOptions: {} })
 const jsonRaw = ref('')
 
+// 当外部传入的 library 变化时（即打开新模态框时），初始化数据
 watch(() => props.library, (newVal) => {
   if (newVal) {
     localData.value = JSON.parse(JSON.stringify(newVal))
@@ -78,9 +82,10 @@ watch(() => props.library, (newVal) => {
   }
 }, { immediate: true })
 
-// 深度监听 localData 变化同步到 JSON
+// 深度监听图形化界面的修改，实时同步到 JSON 字符串
 watch(localData, (newVal) => {
   const currentJson = JSON.stringify(newVal, null, 2)
+  // 只有当内容不一致时才同步，防止死循环
   if (currentJson !== jsonRaw.value) {
     jsonRaw.value = currentJson
   }
@@ -90,7 +95,22 @@ const handleJsonInput = (value: string) => {
   try {
     const parsed = JSON.parse(value)
     localData.value = parsed
-  } catch (e) { }
+  } catch (e) {
+    // 解析失败时不更新 localData，允许用户输入过程中的临时错误
+  }
+}
+
+const handleBackup = async () => {
+  if (!props.library) return
+  backingUp.value = true
+  try {
+    await createEmbyBackup('libraries', props.library.Id, props.library.Name, props.serverId)
+    message.success('当前媒体库配置已备份')
+  } catch (e) {
+    console.error(e)
+  } finally {
+    backingUp.value = false
+  }
 }
 
 const handleSave = async () => {

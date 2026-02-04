@@ -10,8 +10,9 @@
         <template #header>
           <n-space align="center">
             <n-button size="small" @click="loadLibraries" :loading="loading">
-              刷新媒体库
+              刷新媒体库列表
             </n-button>
+            <EmbyConfigBackupManager category="libraries" :server-id="activeServerId" @restored="loadLibraries" />
           </n-space>
         </template>
         <template #header-extra>
@@ -70,6 +71,7 @@ import {
 } from '@/api/embyLibraries'
 import { servers, activeServerId, fetchServers } from '@/store/serverStore'
 import LibraryEditModal from './emby-library/LibraryEditModal.vue'
+import EmbyConfigBackupManager from '@/components/EmbyConfigBackupManager.vue'
 
 const message = useMessage()
 const loading = ref(false)
