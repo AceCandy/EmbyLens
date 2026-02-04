@@ -9,16 +9,8 @@
       <n-card size="small" segmented>
         <template #header>
           <n-space align="center">
-            <span>当前服务器:</span>
-            <n-select
-              v-model:value="selectedServerId"
-              :options="serverOptions"
-              size="small"
-              style="width: 200px"
-              @update:value="loadUsers"
-            />
             <n-button size="small" @click="loadUsers" :loading="loading">
-              刷新
+              刷新用户列表
             </n-button>
           </n-space>
         </template>
@@ -51,112 +43,113 @@
     >
       <n-tabs type="line" animated>
         <n-tab-pane name="account" tab="账户与访问">
-          <n-form label-placement="left" label-width="200" size="small">
-            <n-form-item label="禁用此账户">
+          <n-form label-placement="left" label-width="260" size="small">
+            <n-form-item label="禁用此账户 (IsDisabled)">
               <n-switch v-model:value="policy.IsDisabled" />
             </n-form-item>
-            <n-form-item label="管理员权限">
+            <n-form-item label="管理员权限 (IsAdministrator)">
               <n-switch v-model:value="policy.IsAdministrator" />
             </n-form-item>
-            <n-form-item label="登录时隐藏">
+            <n-form-item label="在登录界面隐藏该用户 (IsHidden)">
               <n-switch v-model:value="policy.IsHidden" />
             </n-form-item>
-            <n-form-item label="远程访问时隐藏">
+            <n-form-item label="远程访问时隐藏 (IsHiddenRemotely)">
               <n-switch v-model:value="policy.IsHiddenRemotely" />
             </n-form-item>
-            <n-form-item label="从未使用的设备上隐藏">
+            <n-form-item label="从不使用的设备中隐藏 (IsHiddenFromUnusedDevices)">
               <n-switch v-model:value="policy.IsHiddenFromUnusedDevices" />
             </n-form-item>
-            <n-form-item label="允许远程访问">
+            <n-form-item label="允许远程访问 (EnableRemoteAccess)">
               <n-switch v-model:value="policy.EnableRemoteAccess" />
             </n-form-item>
-            <n-form-item label="同时播放数量限制">
+            <n-form-item label="同时播放数量限制 (SimultaneousStreamLimit)">
               <n-input-number v-model:value="policy.SimultaneousStreamLimit" :min="0" />
               <template #feedback>0 为无限制</template>
             </n-form-item>
-            <n-form-item label="远程比特率限制 (bps)">
+            <n-form-item label="远程客户端比特率限制 (RemoteClientBitrateLimit)">
               <n-input-number v-model:value="policy.RemoteClientBitrateLimit" :min="0" :step="1000000" />
-              <template #feedback>0 为无限制</template>
+              <template #feedback>单位: bps (0 为无限制)</template>
             </n-form-item>
           </n-form>
         </n-tab-pane>
 
         <n-tab-pane name="playback" tab="播放与转码">
-          <n-form label-placement="left" label-width="200" size="small">
-            <n-form-item label="允许媒体播放">
+          <n-form label-placement="left" label-width="260" size="small">
+            <n-form-item label="允许媒体播放 (EnableMediaPlayback)">
               <n-switch v-model:value="policy.EnableMediaPlayback" />
             </n-form-item>
-            <n-form-item label="允许音频转码">
+            <n-form-item label="允许音频转码 (EnableAudioPlaybackTranscoding)">
               <n-switch v-model:value="policy.EnableAudioPlaybackTranscoding" />
             </n-form-item>
-            <n-form-item label="允许视频转码">
+            <n-form-item label="允许视频转码 (EnableVideoPlaybackTranscoding)">
               <n-switch v-model:value="policy.EnableVideoPlaybackTranscoding" />
             </n-form-item>
-            <n-form-item label="允许封装转换 (Remux)">
+            <n-form-item label="允许播放封装转换 (EnablePlaybackRemuxing)">
               <n-switch v-model:value="policy.EnablePlaybackRemuxing" />
             </n-form-item>
-            <n-form-item label="允许媒体转换">
+            <n-form-item label="允许媒体转换 (EnableMediaConversion)">
               <n-switch v-model:value="policy.EnableMediaConversion" />
             </n-form-item>
-            <n-form-item label="允许同步转码">
+            <n-form-item label="允许同步转码 (EnableSyncTranscoding)">
               <n-switch v-model:value="policy.EnableSyncTranscoding" />
             </n-form-item>
-            <n-form-item label="自动远程质量 (Mbps)">
+            <n-form-item label="自动远程质量 (AutoRemoteQuality)">
               <n-input-number v-model:value="policy.AutoRemoteQuality" :min="0" />
+              <template #feedback>单位: Mbps</template>
             </n-form-item>
           </n-form>
         </n-tab-pane>
 
         <n-tab-pane name="features" tab="功能权限">
-          <n-form label-placement="left" label-width="200" size="small">
+          <n-form label-placement="left" label-width="260" size="small">
             <n-divider title-placement="left">文件与下载</n-divider>
-            <n-form-item label="允许删除媒体文件">
+            <n-form-item label="允许删除媒体 (EnableContentDeletion)">
               <n-switch v-model:value="policy.EnableContentDeletion" />
             </n-form-item>
-            <n-form-item label="允许下载媒体">
+            <n-form-item label="允许下载媒体 (EnableContentDownloading)">
               <n-switch v-model:value="policy.EnableContentDownloading" />
             </n-form-item>
-            <n-form-item label="允许下载字幕">
+            <n-form-item label="允许下载字幕 (EnableSubtitleDownloading)">
               <n-switch v-model:value="policy.EnableSubtitleDownloading" />
             </n-form-item>
-            <n-form-item label="允许管理字幕">
+            <n-form-item label="允许管理字幕 (EnableSubtitleManagement)">
               <n-switch v-model:value="policy.EnableSubtitleManagement" />
             </n-form-item>
-            <n-form-item label="允许相机上传">
+            <n-form-item label="允许相机上传 (AllowCameraUpload)">
               <n-switch v-model:value="policy.AllowCameraUpload" />
             </n-form-item>
 
-            <n-divider title-placement="left">社交与远程</n-divider>
-            <n-form-item label="允许公开分享">
+            <n-divider title-placement="left">社交与远程控制</n-divider>
+            <n-form-item label="允许公开分享内容 (EnablePublicSharing)">
               <n-switch v-model:value="policy.EnablePublicSharing" />
             </n-form-item>
-            <n-form-item label="允许远程控制其他用户">
+            <n-form-item label="允许远程控制其他用户 (EnableRemoteControlOfOtherUsers)">
               <n-switch v-model:value="policy.EnableRemoteControlOfOtherUsers" />
             </n-form-item>
-            <n-form-item label="允许控制共享设备">
+            <n-form-item label="允许控制共享设备 (EnableSharedDeviceControl)">
               <n-switch v-model:value="policy.EnableSharedDeviceControl" />
             </n-form-item>
           </n-form>
         </n-tab-pane>
 
         <n-tab-pane name="library" tab="媒体库范围">
-          <n-form label-placement="left" label-width="200" size="small">
+          <n-form label-placement="left" label-width="260" size="small">
             <n-divider title-placement="left">访问范围</n-divider>
-            <n-form-item label="允许访问所有媒体库">
+            <n-form-item label="允许访问所有媒体库 (EnableAllFolders)">
               <n-switch v-model:value="policy.EnableAllFolders" />
             </n-form-item>
-            <n-form-item label="允许访问所有频道">
+            <n-form-item label="允许访问所有频道 (EnableAllChannels)">
               <n-switch v-model:value="policy.EnableAllChannels" />
             </n-form-item>
-            <n-form-item label="允许在所有设备上登录">
+            <n-form-item label="允许在所有设备上登录 (EnableAllDevices)">
               <n-switch v-model:value="policy.EnableAllDevices" />
             </n-form-item>
             
             <n-divider title-placement="left">直播电视</n-divider>
-            <n-form-item label="允许观看直播电视">
+            <n-form-item label="允许观看直播电视 (EnableLiveTvAccess)">
               <n-switch v-model:value="policy.EnableLiveTvAccess" />
             </n-form-item>
-            <n-form-item label="允许管理直播电视">
+            <n-form-item label="允许管理直播电视 (EnableLiveTvManagement)">
               <n-switch v-model:value="policy.EnableLiveTvManagement" />
             </n-form-item>
           </n-form>
@@ -219,7 +212,6 @@ const message = useMessage()
 const loading = ref(false)
 const creating = ref(false)
 const users = ref<any[]>([])
-const selectedServerId = ref('')
 const newUserName = ref('')
 
 const showEditModal = ref(false)
@@ -228,13 +220,6 @@ const policy = ref<any>({})
 const jsonRaw = ref('')
 const newPassword = ref('')
 const savingPolicy = ref(false)
-
-const serverOptions = computed(() => {
-  return servers.value.map(s => ({
-    label: s.name,
-    value: s.id
-  }))
-})
 
 // 处理 JSON 输入，尝试同步回 policy 对象以保持 UI 一致
 const handleJsonInput = (value: string) => {
@@ -288,10 +273,10 @@ const columns = [
 ]
 
 const loadUsers = async () => {
-  if (!selectedServerId.value) return
+  if (!activeServerId.value) return
   loading.value = true
   try {
-    const res = await listEmbyUsers(selectedServerId.value)
+    const res = await listEmbyUsers(activeServerId.value)
     users.value = res as any
   } catch (e) {
     console.error(e)
@@ -304,7 +289,7 @@ const handleCreateUser = async () => {
   if (!newUserName.value) return
   creating.value = true
   try {
-    await createEmbyUser(newUserName.value, selectedServerId.value)
+    await createEmbyUser(newUserName.value, activeServerId.value)
     message.success('创建成功')
     newUserName.value = ''
     loadUsers()
@@ -317,7 +302,7 @@ const handleCreateUser = async () => {
 
 const handleDeleteUser = async (userId: string) => {
   try {
-    await deleteEmbyUser(userId, selectedServerId.value)
+    await deleteEmbyUser(userId, activeServerId.value)
     message.success('删除成功')
     loadUsers()
   } catch (e) {
@@ -329,7 +314,7 @@ const openEdit = async (user: any) => {
   editingUser.value = user
   newPassword.value = ''
   try {
-    const info = await getEmbyUserInfo(user.Id, selectedServerId.value) as any
+    const info = await getEmbyUserInfo(user.Id, activeServerId.value) as any
     policy.value = info.Policy || {}
     jsonRaw.value = JSON.stringify(policy.value, null, 2)
     showEditModal.value = true
@@ -351,7 +336,7 @@ const handleSavePolicy = async () => {
 
   savingPolicy.value = true
   try {
-    await updateEmbyUserPolicy(editingUser.value.Id, policy.value, selectedServerId.value)
+    await updateEmbyUserPolicy(editingUser.value.Id, policy.value, activeServerId.value)
     message.success('设置已保存')
     showEditModal.value = false
     loadUsers()
@@ -365,7 +350,7 @@ const handleSavePolicy = async () => {
 const handleUpdatePassword = async () => {
   if (!editingUser.value || !newPassword.value) return
   try {
-    await updateEmbyUserPassword(editingUser.value.Id, newPassword.value, selectedServerId.value)
+    await updateEmbyUserPassword(editingUser.value.Id, newPassword.value, activeServerId.value)
     message.success('密码已更新')
     newPassword.value = ''
   } catch (e) {
@@ -374,11 +359,8 @@ const handleUpdatePassword = async () => {
 }
 
 onMounted(async () => {
-  await fetchServers()
-  if (activeServerId.value) {
-    selectedServerId.value = activeServerId.value
-  } else if (servers.value.length > 0) {
-    selectedServerId.value = servers.value[0].id
+  if (!servers.value.length) {
+    await fetchServers()
   }
   loadUsers()
 })

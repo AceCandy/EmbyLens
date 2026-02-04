@@ -126,6 +126,7 @@ export const defaultLayout: MenuGroup[] = [
       'NotificationManagerView', 
       'AccountManagerView', 
       'EmbyUsersView',
+      'EmbyLibrariesView',
       'ExternalControlView'
     ]
   }

@@ -123,6 +123,11 @@ const router = createRouter({
       component: () => import('../views/EmbyUsers.vue'),
     },
     {
+      path: '/emby-libraries',
+      name: 'EmbyLibraries',
+      component: () => import('../views/EmbyLibraries.vue'),
+    },
+    {
       path: '/settings',
       name: 'Settings',
       component: () => import('../views/Settings.vue'),

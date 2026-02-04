@@ -5,6 +5,7 @@ from .system import router as system_router
 from .toolkit import router as toolkit_router
 from .emby_items import router as emby_items_router
 from .emby_users import router as emby_users_router
+from .emby_libraries import router as emby_libraries_router
 from .tmdb_lookup import router as tmdb_lookup_router
 from .tmdb_search import router as tmdb_search_router
 from .tmdb_lab import router as tmdb_lab_router
@@ -42,6 +43,7 @@ router.include_router(system_router, prefix="/system", tags=["System"])
 router.include_router(toolkit_router, prefix="/toolkit", tags=["Toolkit"])
 router.include_router(emby_items_router, prefix="/items", tags=["EmbyItems"])
 router.include_router(emby_users_router, prefix="/emby-users", tags=["EmbyUsers"])
+router.include_router(emby_libraries_router, prefix="/emby-libraries", tags=["EmbyLibraries"])
 router.include_router(tmdb_lookup_router, prefix="/tmdb", tags=["TMDBLookup"])
 router.include_router(tmdb_search_router, prefix="/tmdb-search", tags=["TMDBSearch"])
 router.include_router(tmdb_lab_router, prefix="/tmdb-lab", tags=["TMDBLab"])

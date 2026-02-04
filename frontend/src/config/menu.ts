@@ -72,6 +72,7 @@ export const allMenuItems: MenuOption[] = [
   { label: '通知消息中心', key: 'NotificationManagerView', icon: renderIcon(NotificationIcon) },
   { label: '账号安全管理', key: 'AccountManagerView', icon: renderIcon(ProfileIcon) },
   { label: 'Emby 用户管理', key: 'EmbyUsersView', icon: renderIcon(ActorIcon) },
+  { label: 'Emby 媒体库管理', key: 'EmbyLibrariesView', icon: renderIcon(PostgresIcon) },
   { label: '外部控制体系', key: 'ExternalControlView', icon: renderIcon(SecurityIcon) },
 ]
 
@@ -145,6 +146,7 @@ export const groupedMenuOptions = [
       allMenuItems.find(i => i.key === 'NotificationManagerView'),
       allMenuItems.find(i => i.key === 'AccountManagerView'),
       allMenuItems.find(i => i.key === 'EmbyUsersView'),
+      allMenuItems.find(i => i.key === 'EmbyLibrariesView'),
       allMenuItems.find(i => i.key === 'ExternalControlView'),
     ]
   }
