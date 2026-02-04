@@ -6,6 +6,12 @@
         <n-text depth="3">管理您的 Emby 服务器用户、权限策略及密码。</n-text>
       </div>
 
+      <n-alert title="高危操作警告" type="error" bordered>
+        <template #icon>⚠️</template>
+        本模块功能涉及 Emby 数据库底层权限策略的强制写入。<strong>非必要请勿使用！</strong><br/>
+        建议仅在<strong>新建/初始化 Emby 服务器</strong>时用于快速迁移配置。误操作可能导致 Emby 用户数据库损坏或权限丢失，由此产生的后果请自行承担。
+      </n-alert>
+
       <n-card size="small" segmented>
         <template #header>
           <n-space align="center">

@@ -74,18 +74,9 @@ async def _perform_restore(category: str, config: Dict[str, Any], server_id: Opt
         new_config.pop("ItemId", None)
         new_config.pop("Guid", None)
         
-        target_name = new_config.get("Name")
-        target_type = new_config.get("CollectionType")
+        # refreshLibrary=false 避免超时
+        params = { "refreshLibrary": "false" }
         
-        # 还原时，我们可以给名字加个后缀标识，或者直接按原名创建（Emby 允许重名）
-        # 这里按原名创建，保持最纯粹的还原
-        params = {
-            "refreshLibrary": "true",
-            "Name": target_name,
-            "CollectionType": target_type
-        }
-        
-        # 发送创建请求
         resp = await lib_service._request("POST", "/Library/VirtualFolders", params=params, json_data=new_config)
         return resp is not None and resp.status_code in [200, 204]
 
@@ -175,7 +166,6 @@ async def restore_all_backups(
     seen_names = set()
     files_to_restore = []
     for f in all_files:
-        # 文件名格式: {Name}_{Timestamp}.json
         name_part = f.rsplit('_20', 1)[0]
         if name_part not in seen_names:
             seen_names.add(name_part)

@@ -6,6 +6,12 @@
         <n-text depth="3">管理您的 Emby 媒体库、路径配置及刮削策略。</n-text>
       </div>
 
+      <n-alert title="高危操作警告" type="error" bordered>
+        <template #icon>⚠️</template>
+        本模块主要用于<strong>新服务器的媒体库极速初始化</strong>。通过直接推送 JSON 配置实现设置恢复。<br/>
+        在生产环境服务器上进行删除、修改路径等操作具有极高风险，可能导致媒体库索引损坏或元数据丢失。<strong>非必要请勿操作，后果自负。</strong>
+      </n-alert>
+
       <n-card size="small" segmented>
         <template #header>
           <n-space align="center">
