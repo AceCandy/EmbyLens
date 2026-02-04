@@ -69,6 +69,7 @@ import {
   addEmbyLibrary, 
   removeEmbyLibrary 
 } from '@/api/embyLibraries'
+import { createEmbyBackup } from '@/api/embyBackup'
 import { servers, activeServerId, fetchServers } from '@/store/serverStore'
 import LibraryEditModal from './emby-library/LibraryEditModal.vue'
 import EmbyConfigBackupManager from '@/components/EmbyConfigBackupManager.vue'
@@ -106,8 +107,14 @@ const columns = [
       return h(NSpace, null, {
         default: () => [
           h(NButton, { size: 'small', secondary: true, onClick: () => openEdit(row) }, { default: () => '设置' }),
+          h(NButton, { 
+            size: 'small', 
+            type: 'warning', 
+            quaternary: true,
+            onClick: () => handleDirectBackup(row) 
+          }, { default: () => '备份' }),
           h(NPopconfirm, {
-            onPositiveClick: () => handleRemoveLibrary(row.Name),
+            onPositiveClick: () => handleRemoveLibrary(row.Name, row.Id),
             positiveText: '确认',
             negativeText: '取消'
           }, {
@@ -148,11 +155,20 @@ const handleAddLibrary = async () => {
   }
 }
 
-const handleRemoveLibrary = async (name: string) => {
+const handleRemoveLibrary = async (name: string, id: string) => {
   try {
-    await removeEmbyLibrary(name, activeServerId.value)
+    await removeEmbyLibrary(name, id, activeServerId.value)
     message.success('移除指令已发送')
     loadLibraries()
+  } catch (e) {
+    console.error(e)
+  }
+}
+
+const handleDirectBackup = async (lib: any) => {
+  try {
+    await createEmbyBackup('libraries', lib.Id, lib.Name, activeServerId.value)
+    message.success(`媒体库 ${lib.Name} 备份成功`)
   } catch (e) {
     console.error(e)
   }

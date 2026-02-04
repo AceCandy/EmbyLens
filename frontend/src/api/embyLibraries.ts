@@ -25,10 +25,10 @@ export function updateEmbyLibrary(libraryData: any, server_id?: string) {
   })
 }
 
-export function removeEmbyLibrary(name: string, serverId?: string) {
+export function removeEmbyLibrary(name: string, id: string, serverId?: string) {
   return request({
     url: '/api/emby-libraries/remove',
     method: 'delete',
-    params: { name, server_id: serverId }
+    params: { name, id, server_id: serverId }
   })
 }

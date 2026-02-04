@@ -5,6 +5,7 @@ from fastapi import APIRouter, HTTPException, Query
 from typing import List, Dict, Any, Optional
 from app.services.emby_user_service import get_emby_user_service
 from app.services.emby_library_service import get_emby_library_service
+from app.utils.logger import logger
 
 router = APIRouter()
 
@@ -19,6 +20,8 @@ def get_backup_path(category: str):
 async def list_backups(category: str = Query(..., regex="^(users|libraries)$")):
     path = get_backup_path(category)
     files = []
+    if not os.path.exists(path):
+        return []
     for f in os.listdir(path):
         if f.endswith(".json"):
             full_path = os.path.join(path, f)
@@ -29,7 +32,6 @@ async def list_backups(category: str = Query(..., regex="^(users|libraries)$")):
                 "mtime": stat.st_mtime,
                 "path": full_path
             })
-    # 按时间倒序
     files.sort(key=lambda x: x["mtime"], reverse=True)
     return files
 
@@ -44,7 +46,6 @@ async def create_backup(
         service = get_emby_user_service(server_id)
         config = await service.get_user_info(id)
     else:
-        # 媒体库备份，我们需要先获取列表找到对应的那个
         service = get_emby_library_service(server_id)
         libs = await service.get_libraries()
         config = next((l for l in libs if l.get("Id") == id), None)
@@ -53,6 +54,7 @@ async def create_backup(
         raise HTTPException(status_code=404, detail="Source configuration not found")
 
     timestamp = time.strftime("%Y%m%d_%H%M%S")
+    # 清理文件名中的非法字符
     safe_name = "".join([c for c in name if c.isalnum() or c in (" ", "_", "-")]).strip()
     filename = f"{safe_name}_{timestamp}.json"
     full_path = os.path.join(get_backup_path(category), filename)
@@ -73,21 +75,49 @@ async def restore_backup(
         raise HTTPException(status_code=404, detail="Backup file not found")
 
     with open(full_path, "r", encoding="utf-8") as f:
-        config = json.load(f)
+        backup_config = json.load(f)
 
     if category == "users":
-        service = get_emby_user_service(server_id)
-        user_id = config.get("Id")
-        policy = config.get("Policy")
-        if not user_id or not policy:
-            raise HTTPException(status_code=400, detail="Invalid backup file structure")
-        success = await service.update_user_policy(user_id, policy)
-    else:
-        service = get_emby_library_service(server_id)
-        success = await service.update_library_options(config)
+        user_service = get_emby_user_service(server_id)
+        target_name = backup_config.get("Name")
+        if not target_name:
+            raise HTTPException(status_code=400, detail="Backup file is missing user 'Name'")
 
-    if not success:
-        raise HTTPException(status_code=500, detail="Failed to restore configuration to Emby")
+        # 1. 查找现有用户
+        current_users = await user_service.get_users()
+        target_user = next((u for u in current_users if u.get("Name") == target_name), None)
+        
+        target_id = None
+        if target_user:
+            target_id = target_user.get("Id")
+            logger.info(f"Restoring to existing user: {target_name} ({target_id})")
+        else:
+            # 2. 如果没找到，创建新用户
+            logger.info(f"User {target_name} not found, creating new user...")
+            new_user = await user_service.create_user(target_name)
+            if new_user:
+                target_id = new_user.get("Id")
+            else:
+                raise HTTPException(status_code=500, detail=f"Failed to create user {target_name}")
+
+        # 3. 应用 Policy 和 Configuration
+        success = True
+        if "Policy" in backup_config:
+            p_res = await user_service.update_user_policy(target_id, backup_config["Policy"])
+            if not p_res: success = False
+            
+        if "Configuration" in backup_config:
+            c_res = await user_service.update_user_configuration(target_id, backup_config["Configuration"])
+            if not c_res: success = False
+            
+        if not success:
+            raise HTTPException(status_code=500, detail="Failed to apply some user settings")
+    else:
+        # 媒体库还原逻辑保持不变（原本就是增量/覆盖性质的）
+        lib_service = get_emby_library_service(server_id)
+        success = await lib_service.update_library_options(backup_config)
+        if not success:
+            raise HTTPException(status_code=500, detail="Failed to restore library configuration")
 
     return {"message": "Configuration restored successfully"}
 

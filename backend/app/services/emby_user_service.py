@@ -1,4 +1,5 @@
 import httpx
+import json
 from typing import List, Dict, Any, Optional
 from app.utils.logger import logger
 from app.utils.http_client import get_async_client
@@ -59,8 +60,11 @@ class EmbyUserService:
         resp = await self._request("POST", f"/Users/{user_id}/Policy", json_data=policy)
         return resp is not None and resp.status_code in [200, 204]
 
+    async def update_user_configuration(self, user_id: str, config: Dict[str, Any]) -> bool:
+        resp = await self._request("POST", f"/Users/{user_id}/Configuration", json_data=config)
+        return resp is not None and resp.status_code in [200, 204]
+
     async def update_user_password(self, user_id: str, new_password: str) -> bool:
-        # 注意：Emby 的密码更新接口
         resp = await self._request("POST", f"/Users/{user_id}/Password", json_data={"NewPassword": new_password})
         return resp is not None and resp.status_code in [200, 204]
 

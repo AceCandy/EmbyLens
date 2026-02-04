@@ -32,11 +32,11 @@ async def update_library(library_data: Dict[str, Any], server_id: Optional[str] 
     return {"message": "Library updated"}
 
 @router.delete("/remove")
-async def remove_library(name: str, server_id: Optional[str] = None):
+async def remove_library(name: str, id: str, server_id: Optional[str] = None):
     service = get_emby_library_service(server_id)
     if not service:
         raise HTTPException(status_code=400, detail="Emby server not configured")
-    success = await service.delete_library(name)
+    success = await service.delete_library(name, id)
     if not success:
         raise HTTPException(status_code=500, detail="Failed to remove library")
     return {"message": "Library removed"}

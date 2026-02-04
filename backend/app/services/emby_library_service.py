@@ -1,4 +1,5 @@
 import httpx
+import json
 from typing import List, Dict, Any, Optional
 from app.utils.logger import logger
 from app.utils.http_client import get_async_client
@@ -16,7 +17,10 @@ class EmbyLibraryService:
         self.headers = {
             "X-Emby-Token": self.api_key,
             "Content-Type": "application/json",
-            "Accept": "application/json"
+            "Accept": "application/json",
+            "X-Emby-Client": "Emby Web",
+            "X-Emby-Device-Name": "Lens Manager",
+            "X-Emby-Client-Version": "4.10.0.2"
         }
 
     def _get_client(self) -> httpx.AsyncClient:
@@ -31,12 +35,20 @@ class EmbyLibraryService:
         if params:
             full_params.update(params)
             
+        logger.info(f"┃  ┣ 🚀 [Emby Library API 执行] {method} {url}")
+        if params:
+            logger.info(f"┃  ┃  📍 Params: {params}")
+        if json_data:
+            logger.info(f"┃  ┃  📦 Payload: {json_data}")
+
         try:
             async with self._get_client() as client:
                 response = await client.request(method, url, params=full_params, json=json_data)
+                res_text = response.text if response.text else "(No Content)"
+                logger.info(f"┃  ┃  📥 [Emby 响应] Status: {response.status_code} | Body: {res_text[:200]}")
                 return response
         except Exception as e:
-            logger.error(f"Emby Library API Error: {str(e)}")
+            logger.error(f"┃  ┃  ❌ Emby Library API 异常 ({type(e).__name__}): {str(e)}")
             return None
 
     async def get_libraries(self) -> List[Dict[str, Any]]:
@@ -58,13 +70,22 @@ class EmbyLibraryService:
         return resp is not None and resp.status_code in [200, 204]
 
     async def update_library_options(self, library_data: Dict[str, Any]) -> bool:
-        # 参考脚本：POST /Library/VirtualFolders?refreshLibrary=true
         resp = await self._request("POST", "/Library/VirtualFolders", params={"refreshLibrary": "true"}, json_data=library_data)
         return resp is not None and resp.status_code in [200, 204]
 
-    async def delete_library(self, name: str) -> bool:
-        # 注意：删除媒体库通常是 DELETE /Library/VirtualFolders
-        resp = await self._request("DELETE", "/Library/VirtualFolders", params={"Name": name})
+    async def delete_library(self, name: str, library_id: str) -> bool:
+        """
+        根据抓包修正的删除逻辑:
+        Method: POST
+        URL: /Library/VirtualFolders/Delete
+        Params: refreshLibrary=true, id=xxx, name=xxx
+        """
+        params = {
+            'refreshLibrary': 'true',
+            'id': library_id,
+            'name': name
+        }
+        resp = await self._request("POST", "/Library/VirtualFolders/Delete", params=params)
         return resp is not None and resp.status_code in [200, 204]
 
 def get_emby_library_service(server_id: str = None) -> Optional[EmbyLibraryService]:

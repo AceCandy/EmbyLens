@@ -263,6 +263,12 @@ const columns = [
             secondary: true,
             onClick: () => openEdit(row)
           }, { default: () => '设置' }),
+          h(NButton, {
+            size: 'small',
+            type: 'warning',
+            quaternary: true,
+            onClick: () => handleDirectBackup(row)
+          }, { default: () => '备份' }),
           h(NPopconfirm, {
             onPositiveClick: () => handleDeleteUser(row.Id),
             positiveText: '确认',
@@ -323,6 +329,15 @@ const openEdit = async (user: any) => {
     policy.value = info.Policy || {}
     jsonRaw.value = JSON.stringify(policy.value, null, 2)
     showEditModal.value = true
+  } catch (e) {
+    console.error(e)
+  }
+}
+
+const handleDirectBackup = async (user: any) => {
+  try {
+    await createEmbyBackup('users', user.Id, user.Name, activeServerId.value)
+    message.success(`用户 ${user.Name} 备份成功`)
   } catch (e) {
     console.error(e)
   }
