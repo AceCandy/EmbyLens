@@ -7,14 +7,24 @@
 
     <n-modal v-model:show="showModal" preset="card" title="配置备份历史" style="width: 700px">
       <template #header-extra>
-        <n-popconfirm @positive-click="handleClearAll" positive-text="确定清空" negative-text="取消">
-          <template #trigger>
-            <n-button size="tiny" type="error" quaternary :disabled="backups.length === 0">
-              清空所有备份
-            </n-button>
-          </template>
-          确定要删除当前分类下的所有备份文件吗？此操作不可撤销。
-        </n-popconfirm>
+        <n-space>
+          <n-popconfirm @positive-click="handleRestoreAll" positive-text="确定还原" negative-text="取消">
+            <template #trigger>
+              <n-button size="tiny" type="warning" secondary :disabled="backups.length === 0" :loading="restoringAll">
+                一键还原最新备份
+              </n-button>
+            </template>
+            确定要将所有配置还原吗？系统将为每个用户/媒体库选取最新的一份备份进行恢复。
+          </n-popconfirm>
+          <n-popconfirm @positive-click="handleClearAll" positive-text="确定清空" negative-text="取消">
+            <template #trigger>
+              <n-button size="tiny" type="error" quaternary :disabled="backups.length === 0">
+                清空所有备份
+              </n-button>
+            </template>
+            确定要删除当前分类下的所有备份文件吗？此操作不可撤销。
+          </n-popconfirm>
+        </n-space>
       </template>
       <n-space vertical size="large">
         <n-alert type="info" size="small">
@@ -36,7 +46,7 @@
 <script setup lang="ts">
 import { ref, onMounted, watch, h } from 'vue'
 import { NButton, NSpace, NPopconfirm, useMessage, NTag, NIcon } from 'naive-ui'
-import { listEmbyBackups, restoreEmbyBackup, deleteEmbyBackup, clearEmbyBackups } from '@/api/embyBackup'
+import { listEmbyBackups, restoreEmbyBackup, deleteEmbyBackup, clearEmbyBackups, restoreAllEmbyBackups } from '@/api/embyBackup'
 import { HistoryOutlined as HistoryIcon } from '@vicons/material'
 
 const props = defineProps<{
@@ -48,6 +58,7 @@ const emit = defineEmits(['restored'])
 const message = useMessage()
 const showModal = ref(false)
 const loading = ref(false)
+const restoringAll = ref(false)
 const backups = ref<any[]>([])
 
 const columns = [
@@ -129,6 +140,20 @@ const handleClearAll = async () => {
     loadBackups()
   } catch (e) {
     console.error(e)
+  }
+}
+
+const handleRestoreAll = async () => {
+  restoringAll.value = true
+  try {
+    const res: any = await restoreAllEmbyBackups(props.category, props.serverId)
+    message.success(`成功还原 ${res.count} 项最新配置`)
+    emit('restored')
+    showModal.value = false
+  } catch (e) {
+    console.error(e)
+  } finally {
+    restoringAll.value = false
   }
 }
 

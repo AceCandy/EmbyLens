@@ -22,7 +22,7 @@
       
       <n-divider title-placement="left">媒体路径</n-divider>
       <n-dynamic-input
-        :value="pathList"
+        v-model:value="localPaths"
         placeholder="请输入路径"
         @update:value="handlePathsChange"
       >
@@ -43,7 +43,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref, watch } from 'vue'
 
 const props = defineProps<{
   modelValue: any
@@ -51,9 +51,17 @@ const props = defineProps<{
 
 const emit = defineEmits(['update:modelValue'])
 
-const pathList = computed(() => {
-  return (props.modelValue.LibraryOptions?.PathInfos || []).map((p: any) => p.Path)
-})
+// 使用本地 ref 管理路径，解决 n-dynamic-input 响应问题
+const localPaths = ref<string[]>([])
+
+// 同步初始化
+watch(() => props.modelValue.LibraryOptions?.PathInfos, (newVal) => {
+  const paths = (newVal || []).map((p: any) => p.Path)
+  // 只有当长度或内容不一致时才更新，防止输入时的干扰
+  if (JSON.stringify(paths) !== JSON.stringify(localPaths.value)) {
+    localPaths.value = paths
+  }
+}, { immediate: true })
 
 const readerOrder = computed(() => {
   const disabled = props.modelValue.LibraryOptions?.DisabledLocalMetadataReaders || []
@@ -62,7 +70,7 @@ const readerOrder = computed(() => {
 })
 
 const updateRoot = (key: string, val: any) => {
-  const data = JSON.parse(JSON.stringify(props.modelValue))
+  const data = { ...props.modelValue }
   data[key] = val
   emit('update:modelValue', data)
 }
@@ -77,7 +85,8 @@ const updateLibOpt = (key: string, val: any) => {
 const handlePathsChange = (paths: string[]) => {
   const data = JSON.parse(JSON.stringify(props.modelValue))
   if (!data.LibraryOptions) data.LibraryOptions = {}
-  data.LibraryOptions.PathInfos = paths.filter(p => p).map(p => ({ Path: p }))
+  // 过滤掉空路径并映射为 PathInfos 对象
+  data.LibraryOptions.PathInfos = paths.map(p => ({ Path: p }))
   emit('update:modelValue', data)
 }
 

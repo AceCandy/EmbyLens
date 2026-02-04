@@ -17,7 +17,7 @@ def get_backup_path(category: str):
     return path
 
 async def _perform_single_backup(category: str, item_id: str, name: str, server_id: Optional[str] = None):
-    """核心备份执行逻辑，供单项备份和批量备份共同调用"""
+    """核心备份执行逻辑"""
     if category == "users":
         service = get_emby_user_service(server_id)
         config = await service.get_user_info(item_id)
@@ -38,6 +38,56 @@ async def _perform_single_backup(category: str, item_id: str, name: str, server_
         json.dump(config, f, indent=4, ensure_ascii=False)
     
     return filename
+
+async def _perform_restore(category: str, config: Dict[str, Any], server_id: Optional[str] = None):
+    """核心还原执行逻辑"""
+    if category == "users":
+        user_service = get_emby_user_service(server_id)
+        target_name = config.get("Name")
+        if not target_name: return False
+
+        current_users = await user_service.get_users()
+        target_user = next((u for u in current_users if u.get("Name") == target_name), None)
+        
+        target_id = None
+        if target_user:
+            target_id = target_user.get("Id")
+        else:
+            new_user = await user_service.create_user(target_name)
+            if new_user:
+                target_id = new_user.get("Id")
+            else:
+                return False
+
+        success = True
+        if "Policy" in config:
+            if not await user_service.update_user_policy(target_id, config["Policy"]): success = False
+        if "Configuration" in config:
+            if not await user_service.update_user_configuration(target_id, config["Configuration"]): success = False
+        return success
+    else:
+        lib_service = get_emby_library_service(server_id)
+        
+        # 深度拷贝并清理 ID 相关字段，确保 Emby 识别为“新建”
+        new_config = json.loads(json.dumps(config))
+        new_config.pop("Id", None)
+        new_config.pop("ItemId", None)
+        new_config.pop("Guid", None)
+        
+        target_name = new_config.get("Name")
+        target_type = new_config.get("CollectionType")
+        
+        # 还原时，我们可以给名字加个后缀标识，或者直接按原名创建（Emby 允许重名）
+        # 这里按原名创建，保持最纯粹的还原
+        params = {
+            "refreshLibrary": "true",
+            "Name": target_name,
+            "CollectionType": target_type
+        }
+        
+        # 发送创建请求
+        resp = await lib_service._request("POST", "/Library/VirtualFolders", params=params, json_data=new_config)
+        return resp is not None and resp.status_code in [200, 204]
 
 @router.get("/list")
 async def list_backups(category: str = Query(..., regex="^(users|libraries)$")):
@@ -86,10 +136,8 @@ async def create_all_backups(
     for item in items:
         item_id = item.get("Id")
         item_name = item.get("Name")
-        # 直接调用封装好的核心逻辑
         filename = await _perform_single_backup(category, item_id, item_name, server_id)
-        if filename:
-            count += 1
+        if filename: count += 1
 
     return {"message": f"Successfully backed up {count} {category}", "count": count}
 
@@ -104,45 +152,43 @@ async def restore_backup(
         raise HTTPException(status_code=404, detail="Backup file not found")
 
     with open(full_path, "r", encoding="utf-8") as f:
-        backup_config = json.load(f)
+        config = json.load(f)
 
-    if category == "users":
-        user_service = get_emby_user_service(server_id)
-        target_name = backup_config.get("Name")
-        if not target_name:
-            raise HTTPException(status_code=400, detail="Backup file is missing user 'Name'")
-
-        current_users = await user_service.get_users()
-        target_user = next((u for u in current_users if u.get("Name") == target_name), None)
-        
-        target_id = None
-        if target_user:
-            target_id = target_user.get("Id")
-        else:
-            new_user = await user_service.create_user(target_name)
-            if new_user:
-                target_id = new_user.get("Id")
-            else:
-                raise HTTPException(status_code=500, detail=f"Failed to create user {target_name}")
-
-        success = True
-        if "Policy" in backup_config:
-            p_res = await user_service.update_user_policy(target_id, backup_config["Policy"])
-            if not p_res: success = False
-            
-        if "Configuration" in backup_config:
-            c_res = await user_service.update_user_configuration(target_id, backup_config["Configuration"])
-            if not c_res: success = False
-            
-        if not success:
-            raise HTTPException(status_code=500, detail="Failed to apply some user settings")
+    if await _perform_restore(category, config, server_id):
+        return {"message": "Configuration restored successfully"}
     else:
-        lib_service = get_emby_library_service(server_id)
-        success = await lib_service.update_library_options(backup_config)
-        if not success:
-            raise HTTPException(status_code=500, detail="Failed to restore library configuration")
+        raise HTTPException(status_code=500, detail="Failed to restore configuration")
 
-    return {"message": "Configuration restored successfully"}
+@router.post("/restore-all")
+async def restore_all_backups(
+    category: str = Query(..., regex="^(users|libraries)$"),
+    server_id: Optional[str] = None
+):
+    path = get_backup_path(category)
+    if not os.path.exists(path):
+        return {"message": "No backups found", "count": 0}
+    
+    # 获取该目录下所有 JSON，按时间排序，同名的只取最新的
+    all_files = [f for f in os.listdir(path) if f.endswith(".json")]
+    all_files.sort(key=lambda x: os.path.getmtime(os.path.join(path, x)), reverse=True)
+    
+    seen_names = set()
+    files_to_restore = []
+    for f in all_files:
+        # 文件名格式: {Name}_{Timestamp}.json
+        name_part = f.rsplit('_20', 1)[0]
+        if name_part not in seen_names:
+            seen_names.add(name_part)
+            files_to_restore.append(f)
+    
+    count = 0
+    for f in files_to_restore:
+        with open(os.path.join(path, f), "r", encoding="utf-8") as file:
+            config = json.load(file)
+            if await _perform_restore(category, config, server_id):
+                count += 1
+                
+    return {"message": f"Successfully restored {count} {category} configurations", "count": count}
 
 @router.delete("/delete")
 async def delete_backup(category: str, filename: str):
