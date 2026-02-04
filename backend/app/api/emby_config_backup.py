@@ -127,3 +127,12 @@ async def delete_backup(category: str, filename: str):
     if os.path.exists(full_path):
         os.remove(full_path)
     return {"message": "Backup deleted"}
+
+@router.delete("/clear")
+async def clear_backups(category: str = Query(..., regex="^(users|libraries)$")):
+    path = get_backup_path(category)
+    if os.path.exists(path):
+        for f in os.listdir(path):
+            if f.endswith(".json"):
+                os.remove(os.path.join(path, f))
+    return {"message": f"All {category} backups cleared"}

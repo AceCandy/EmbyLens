@@ -6,6 +6,16 @@
     </n-button>
 
     <n-modal v-model:show="showModal" preset="card" title="配置备份历史" style="width: 700px">
+      <template #header-extra>
+        <n-popconfirm @positive-click="handleClearAll" positive-text="确定清空" negative-text="取消">
+          <template #trigger>
+            <n-button size="tiny" type="error" quaternary :disabled="backups.length === 0">
+              清空所有备份
+            </n-button>
+          </template>
+          确定要删除当前分类下的所有备份文件吗？此操作不可撤销。
+        </n-popconfirm>
+      </template>
       <n-space vertical size="large">
         <n-alert type="info" size="small">
           备份将保存当前选定对象的完整原始 JSON 配置。还原操作将直接覆盖服务器上的现有设置，请谨慎操作。
@@ -26,7 +36,7 @@
 <script setup lang="ts">
 import { ref, onMounted, watch, h } from 'vue'
 import { NButton, NSpace, NPopconfirm, useMessage, NTag, NIcon } from 'naive-ui'
-import { listEmbyBackups, restoreEmbyBackup, deleteEmbyBackup } from '@/api/embyBackup'
+import { listEmbyBackups, restoreEmbyBackup, deleteEmbyBackup, clearEmbyBackups } from '@/api/embyBackup'
 import { HistoryOutlined as HistoryIcon } from '@vicons/material'
 
 const props = defineProps<{
@@ -106,6 +116,16 @@ const handleDelete = async (filename: string) => {
   try {
     await deleteEmbyBackup(props.category, filename)
     message.success('备份已删除')
+    loadBackups()
+  } catch (e) {
+    console.error(e)
+  }
+}
+
+const handleClearAll = async () => {
+  try {
+    await clearEmbyBackups(props.category)
+    message.success('所有备份已清空')
     loadBackups()
   } catch (e) {
     console.error(e)

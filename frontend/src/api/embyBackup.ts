@@ -31,3 +31,11 @@ export function deleteEmbyBackup(category: 'users' | 'libraries', filename: stri
     params: { category, filename }
   })
 }
+
+export function clearEmbyBackups(category: 'users' | 'libraries') {
+  return request({
+    url: '/api/emby-backup/clear',
+    method: 'delete',
+    params: { category }
+  })
+}
