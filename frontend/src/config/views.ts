@@ -25,6 +25,7 @@ export const viewMap: Record<string, any> = {
   NotificationManagerView: defineAsyncComponent(() => import('../views/toolkit/NotificationManager.vue')),
   ExternalControlView: defineAsyncComponent(() => import('../views/toolkit/ExternalControl.vue')),
   AccountManagerView: defineAsyncComponent(() => import('../views/toolkit/AccountManager.vue')),
+  EmbyUsersView: defineAsyncComponent(() => import('../views/EmbyUsers.vue')),
   PlaybackReportView: defineAsyncComponent(() => import('../views/toolkit/playback-report/PlaybackReport.vue')),
   SiteNavView: defineAsyncComponent(() => import('../views/toolkit/sitenav/SiteNav.vue'))
 }

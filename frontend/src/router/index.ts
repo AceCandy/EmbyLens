@@ -118,6 +118,11 @@ const router = createRouter({
       component: () => import('../views/toolkit/ExternalControl.vue'),
     },
     {
+      path: '/emby-users',
+      name: 'EmbyUsers',
+      component: () => import('../views/EmbyUsers.vue'),
+    },
+    {
       path: '/settings',
       name: 'Settings',
       component: () => import('../views/Settings.vue'),

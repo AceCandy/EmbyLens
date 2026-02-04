@@ -121,7 +121,13 @@ export const defaultLayout: MenuGroup[] = [
     label: '配置中心',
     visible: true,
     type: 'group',
-    items: ['WebhookReceiverView', 'NotificationManagerView', 'AccountManagerView', 'ExternalControlView']
+    items: [
+      'WebhookReceiverView', 
+      'NotificationManagerView', 
+      'AccountManagerView', 
+      'EmbyUsersView',
+      'ExternalControlView'
+    ]
   }
 ]
 
