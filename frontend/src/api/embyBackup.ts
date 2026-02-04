@@ -16,6 +16,14 @@ export function createEmbyBackup(category: 'users' | 'libraries', id: string, na
   })
 }
 
+export function createAllEmbyBackups(category: 'users' | 'libraries', serverId?: string) {
+  return request({
+    url: '/api/emby-backup/create-all',
+    method: 'post',
+    params: { category, server_id: serverId }
+  })
+}
+
 export function restoreEmbyBackup(category: 'users' | 'libraries', filename: string, serverId?: string) {
   return request({
     url: '/api/emby-backup/restore',

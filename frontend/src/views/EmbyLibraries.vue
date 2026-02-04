@@ -12,6 +12,9 @@
             <n-button size="small" @click="loadLibraries" :loading="loading">
               刷新媒体库列表
             </n-button>
+            <n-button size="small" type="warning" secondary @click="handleBackupAll" :loading="backingUpAll">
+              一键备份所有媒体库
+            </n-button>
             <EmbyConfigBackupManager category="libraries" :server-id="activeServerId" @restored="loadLibraries" />
           </n-space>
         </template>
@@ -69,7 +72,7 @@ import {
   addEmbyLibrary, 
   removeEmbyLibrary 
 } from '@/api/embyLibraries'
-import { createEmbyBackup } from '@/api/embyBackup'
+import { createEmbyBackup, createAllEmbyBackups } from '@/api/embyBackup'
 import { servers, activeServerId, fetchServers } from '@/store/serverStore'
 import LibraryEditModal from './emby-library/LibraryEditModal.vue'
 import EmbyConfigBackupManager from '@/components/EmbyConfigBackupManager.vue'
@@ -77,6 +80,8 @@ import EmbyConfigBackupManager from '@/components/EmbyConfigBackupManager.vue'
 const message = useMessage()
 const loading = ref(false)
 const adding = ref(false)
+const saving = ref(false)
+const backingUpAll = ref(false)
 const libraries = ref<any[]>([])
 
 const showAddModal = ref(false)
@@ -100,7 +105,7 @@ const columns = [
   { title: '名称', key: 'Name' },
   { title: '类型', key: 'CollectionType', render: (row: any) => h(NTag, { type: 'info', size: 'small' }, { default: () => row.CollectionType }) },
   { title: 'ID', key: 'Id', render: (row: any) => h('code', { style: 'font-size: 12px' }, row.Id) },
-  {
+  { 
     title: '操作',
     key: 'actions',
     render(row: any) {
@@ -155,8 +160,19 @@ const handleAddLibrary = async () => {
   }
 }
 
-const handleRemoveLibrary = async (name: string, id: string) => {
+const handleBackupAll = async () => {
+  backingUpAll.value = true
   try {
+    const res: any = await createAllEmbyBackups('libraries', activeServerId.value)
+    message.success(`成功备份 ${res.count} 个媒体库配置`)
+  } catch (e) {
+    console.error(e)
+  } finally {
+    backingUpAll.value = false
+  }
+}
+
+const handleRemoveLibrary = async (name: string, id: string) => {  try {
     await removeEmbyLibrary(name, id, activeServerId.value)
     message.success('移除指令已发送')
     loadLibraries()
