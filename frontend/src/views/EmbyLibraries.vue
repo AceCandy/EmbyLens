@@ -12,20 +12,41 @@
         在生产环境服务器上进行删除、修改路径等操作具有极高风险，可能导致媒体库索引损坏或元数据丢失。<strong>非必要请勿操作，后果自负。</strong>
       </n-alert>
 
-      <n-card size="small" segmented>
+      <n-card size="small" segmented :bordered="false" class="main-card">
         <template #header>
           <n-space align="center">
-            <n-button size="small" @click="loadLibraries" :loading="loading">
+            <n-button 
+              strong 
+              secondary 
+              type="primary" 
+              size="small" 
+              @click="loadLibraries" 
+              :loading="loading"
+            >
+              <template #icon><n-icon><RefreshIcon /></n-icon></template>
               刷新媒体库列表
             </n-button>
-            <n-button size="small" type="warning" secondary @click="handleBackupAll" :loading="backingUpAll">
+            <n-button 
+              strong 
+              secondary 
+              type="warning" 
+              size="small" 
+              @click="handleBackupAll" 
+              :loading="backingUpAll"
+            >
+              <template #icon><n-icon><BackupIcon /></n-icon></template>
               一键备份所有媒体库
             </n-button>
             <EmbyConfigBackupManager category="libraries" :server-id="activeServerId" @restored="loadLibraries" />
           </n-space>
         </template>
         <template #header-extra>
-          <n-button type="primary" size="small" @click="showAddModal = true">
+          <n-button 
+            type="primary" 
+            size="small" 
+            @click="showAddModal = true"
+          >
+            <template #icon><n-icon><LibAddIcon /></n-icon></template>
             新增媒体库
           </n-button>
         </template>
@@ -35,12 +56,13 @@
           :data="libraries"
           :loading="loading"
           size="small"
+          :bordered="false"
         />
       </n-card>
     </n-space>
 
     <!-- 新增媒体库模态框 -->
-    <n-modal v-model:show="showAddModal" preset="card" title="新增媒体库" style="width: 500px">
+    <n-modal v-model:show="showAddModal" preset="card" title="新增媒体库" style="width: 500px" :bordered="false">
       <n-form label-placement="left" label-width="100" size="small">
         <n-form-item label="显示名称">
           <n-input v-model:value="newLib.name" placeholder="例如：电影" />
@@ -54,8 +76,14 @@
       </n-form>
       <template #action>
         <n-space justify="end">
-          <n-button @click="showAddModal = false">取消</n-button>
-          <n-button type="primary" @click="handleAddLibrary" :loading="adding">创建</n-button>
+          <n-button strong secondary @click="showAddModal = false">
+            <template #icon><n-icon><CloseIcon /></n-icon></template>
+            取消
+          </n-button>
+          <n-button type="primary" strong secondary @click="handleAddLibrary" :loading="adding">
+            <template #icon><n-icon><CheckIcon /></n-icon></template>
+            创建媒体库
+          </n-button>
         </n-space>
       </template>
     </n-modal>
@@ -72,7 +100,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, reactive, h } from 'vue'
-import { NButton, NSpace, NTag, NPopconfirm, useMessage } from 'naive-ui'
+import { NButton, NSpace, NTag, NPopconfirm, useMessage, NIcon, NInput, NSelect, NCard, NDataTable, NModal, NForm, NFormItem, NAlert, NText } from 'naive-ui'
 import { 
   listEmbyLibraries, 
   addEmbyLibrary, 
@@ -82,11 +110,19 @@ import { createEmbyBackup, createAllEmbyBackups } from '@/api/embyBackup'
 import { servers, activeServerId, fetchServers } from '@/store/serverStore'
 import LibraryEditModal from './emby-library/LibraryEditModal.vue'
 import EmbyConfigBackupManager from '@/components/EmbyConfigBackupManager.vue'
+import { 
+  RefreshOutlined as RefreshIcon,
+  BackupOutlined as BackupIcon,
+  SettingsOutlined as EditIcon,
+  DeleteOutlined as DeleteIcon,
+  LibraryAddOutlined as LibAddIcon,
+  CheckOutlined as CheckIcon,
+  CloseOutlined as CloseIcon
+} from '@vicons/material'
 
 const message = useMessage()
 const loading = ref(false)
 const adding = ref(false)
-const saving = ref(false)
 const backingUpAll = ref(false)
 const libraries = ref<any[]>([])
 
@@ -109,27 +145,56 @@ const editingLib = ref<any>(null)
 
 const columns = [
   { title: '名称', key: 'Name' },
-  { title: '类型', key: 'CollectionType', render: (row: any) => h(NTag, { type: 'info', size: 'small' }, { default: () => row.CollectionType }) },
-  { title: 'ID', key: 'Id', render: (row: any) => h('code', { style: 'font-size: 12px' }, row.Id) },
   { 
+    title: '类型', 
+    key: 'CollectionType', 
+    render: (row: any) => h(NTag, { type: 'info', size: 'small', round: true, quaternary: true }, { default: () => row.CollectionType }) 
+  },
+  { 
+    title: 'ID', 
+    key: 'Id', 
+    render: (row: any) => h('code', { style: 'font-size: 12px; opacity: 0.6' }, row.Id) 
+  },
+  {
     title: '操作',
     key: 'actions',
     render(row: any) {
       return h(NSpace, null, {
         default: () => [
-          h(NButton, { size: 'small', secondary: true, onClick: () => openEdit(row) }, { default: () => '设置' }),
           h(NButton, { 
-            size: 'small', 
-            type: 'warning', 
-            quaternary: true,
+            size: 'tiny', 
+            strong: true,
+            secondary: true, 
+            type: 'info',
+            onClick: () => openEdit(row) 
+          }, { 
+            default: () => '设置',
+            icon: () => h(NIcon, null, { default: () => h(EditIcon) })
+          }),
+          h(NButton, { 
+            size: 'tiny', 
+            strong: true,
+            secondary: true, 
+            type: 'warning',
             onClick: () => handleDirectBackup(row) 
-          }, { default: () => '备份' }),
+          }, { 
+            default: () => '备份',
+            icon: () => h(NIcon, null, { default: () => h(BackupIcon) })
+          }),
           h(NPopconfirm, {
             onPositiveClick: () => handleRemoveLibrary(row.Name, row.Id),
-            positiveText: '确认',
+            positiveText: '确认移除',
             negativeText: '取消'
           }, {
-            trigger: () => h(NButton, { size: 'small', type: 'error', quaternary: true }, { default: () => '移除' }),
+            trigger: () => h(NButton, { 
+              size: 'tiny', 
+              strong: true,
+              secondary: true, 
+              type: 'error'
+            }, { 
+              default: () => '移除',
+              icon: () => h(NIcon, null, { default: () => h(DeleteIcon) })
+            }),
             default: () => `确定移除媒体库 ${row.Name}？`
           })
         ]
@@ -178,7 +243,8 @@ const handleBackupAll = async () => {
   }
 }
 
-const handleRemoveLibrary = async (name: string, id: string) => {  try {
+const handleRemoveLibrary = async (name: string, id: string) => {
+  try {
     await removeEmbyLibrary(name, id, activeServerId.value)
     message.success('移除指令已发送')
     loadLibraries()
@@ -210,10 +276,7 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-.emby-libraries-container {
-  padding: 10px;
-}
-.page-header {
-  margin-bottom: 20px;
-}
+.emby-libraries-container { padding: 10px; }
+.page-header { margin-bottom: 20px; }
+.main-card { margin-top: 12px; }
 </style>

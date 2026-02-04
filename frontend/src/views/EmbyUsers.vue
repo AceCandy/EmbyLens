@@ -12,13 +12,29 @@
         建议仅在<strong>新建/初始化 Emby 服务器</strong>时用于快速迁移配置。误操作可能导致 Emby 用户数据库损坏或权限丢失，由此产生的后果请自行承担。
       </n-alert>
 
-      <n-card size="small" segmented>
+      <n-card size="small" segmented :bordered="false" class="main-card">
         <template #header>
           <n-space align="center">
-            <n-button size="small" @click="loadUsers" :loading="loading">
+            <n-button 
+              strong 
+              secondary 
+              type="primary" 
+              size="small" 
+              @click="loadUsers" 
+              :loading="loading"
+            >
+              <template #icon><n-icon><RefreshIcon /></n-icon></template>
               刷新用户列表
             </n-button>
-            <n-button size="small" type="warning" secondary @click="handleBackupAll" :loading="backingUpAll">
+            <n-button 
+              strong 
+              secondary 
+              type="warning" 
+              size="small" 
+              @click="handleBackupAll" 
+              :loading="backingUpAll"
+            >
+              <template #icon><n-icon><BackupIcon /></n-icon></template>
               一键备份所有用户
             </n-button>
             <EmbyConfigBackupManager category="users" :server-id="activeServerId" @restored="loadUsers" />
@@ -26,8 +42,9 @@
         </template>
         <template #header-extra>
           <n-input-group>
-            <n-input v-model:value="newUserName" placeholder="新用户名" size="small" @keyup.enter="handleCreateUser" />
+            <n-input v-model:value="newUserName" placeholder="新用户名" size="small" @keyup.enter="handleCreateUser" style="width: 150px" />
             <n-button type="primary" size="small" @click="handleCreateUser" :loading="creating">
+              <template #icon><n-icon><UserAddIcon /></n-icon></template>
               新增用户
             </n-button>
           </n-input-group>
@@ -38,6 +55,7 @@
           :data="users"
           :loading="loading"
           size="small"
+          :bordered="false"
           :pagination="{ pageSize: 10 }"
         />
       </n-card>
@@ -49,6 +67,7 @@
       preset="card"
       :title="'设置: ' + editingUser?.Name"
       style="width: 800px"
+      :bordered="false"
       segmented
     >
       <n-tabs type="line" animated>
@@ -171,7 +190,8 @@
               <n-input v-model:value="newPassword" type="password" show-password-on="click" placeholder="留空则不修改" />
             </n-form-item>
             <n-form-item>
-              <n-button type="warning" @click="handleUpdatePassword" :disabled="!newPassword">
+              <n-button type="warning" secondary strong @click="handleUpdatePassword" :disabled="!newPassword">
+                <template #icon><n-icon><EditIcon /></n-icon></template>
                 单独更新密码
               </n-button>
             </n-form-item>
@@ -197,9 +217,18 @@
 
       <template #action>
         <n-space justify="end">
-          <n-button @click="showEditModal = false">取消</n-button>
-          <n-button type="warning" secondary @click="handleBackup" :loading="backingUp">备份当前配置</n-button>
-          <n-button type="primary" @click="handleSavePolicy" :loading="savingPolicy">保存设置</n-button>
+          <n-button strong secondary @click="showEditModal = false">
+            <template #icon><n-icon><CloseIcon /></n-icon></template>
+            取消
+          </n-button>
+          <n-button type="warning" secondary strong @click="handleBackup" :loading="backingUp">
+            <template #icon><n-icon><BackupIcon /></n-icon></template>
+            备份当前配置
+          </n-button>
+          <n-button type="primary" strong @click="handleSavePolicy" :loading="savingPolicy">
+            <template #icon><n-icon><SaveIcon /></n-icon></template>
+            保存设置
+          </n-button>
         </n-space>
       </template>
     </n-modal>
@@ -208,7 +237,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, computed, h } from 'vue'
-import { NButton, NSpace, NTag, NPopconfirm, useMessage } from 'naive-ui'
+import { NButton, NSpace, NTag, NPopconfirm, useMessage, NIcon, NInput, NInputGroup, NCard, NDataTable, NModal, NTabs, NTabPane, NForm, NFormItem, NSwitch, NInputNumber, NDivider, NAlert, NText } from 'naive-ui'
 import { 
   listEmbyUsers, 
   createEmbyUser, 
@@ -220,6 +249,15 @@ import {
 import { createEmbyBackup, createAllEmbyBackups } from '@/api/embyBackup'
 import { servers, activeServerId, fetchServers } from '@/store/serverStore'
 import EmbyConfigBackupManager from '@/components/EmbyConfigBackupManager.vue'
+import { 
+  RefreshOutlined as RefreshIcon,
+  BackupOutlined as BackupIcon,
+  SettingsOutlined as EditIcon,
+  DeleteOutlined as DeleteIcon,
+  PersonAddOutlined as UserAddIcon,
+  SaveOutlined as SaveIcon,
+  CloseOutlined as CloseIcon
+} from '@vicons/material'
 
 const message = useMessage()
 const loading = ref(false)
@@ -227,7 +265,6 @@ const creating = ref(false)
 const backingUp = ref(false)
 const backingUpAll = ref(false)
 const users = ref<any[]>([])
-
 const newUserName = ref('')
 
 const showEditModal = ref(false)
@@ -237,14 +274,11 @@ const jsonRaw = ref('')
 const newPassword = ref('')
 const savingPolicy = ref(false)
 
-// 处理 JSON 输入，尝试同步回 policy 对象以保持 UI 一致
 const handleJsonInput = (value: string) => {
   try {
     const parsed = JSON.parse(value)
     policy.value = parsed
-  } catch (e) {
-    // 允许输入过程中的非法格式，仅在保存时强校验
-  }
+  } catch (e) { }
 }
 
 const columns = [
@@ -254,11 +288,11 @@ const columns = [
     key: 'Policy',
     render(row: any) {
       const tags = []
-      if (row.Policy?.IsDisabled) tags.push(h(NTag, { type: 'error', size: 'small' }, { default: () => '禁用' }))
-      if (row.Policy?.IsAdministrator) tags.push(h(NTag, { type: 'warning', size: 'small' }, { default: () => '管理员' }))
-      if (row.Policy?.IsHidden) tags.push(h(NTag, { type: 'default', size: 'small' }, { default: () => '隐藏' }))
+      if (row.Policy?.IsDisabled) tags.push(h(NTag, { type: 'error', size: 'small', round: true, quaternary: true }, { default: () => '禁用' }))
+      if (row.Policy?.IsAdministrator) tags.push(h(NTag, { type: 'warning', size: 'small', round: true, quaternary: true }, { default: () => '管理员' }))
+      if (row.Policy?.IsHidden) tags.push(h(NTag, { type: 'default', size: 'small', round: true, quaternary: true }, { default: () => '隐藏' }))
       
-      if (tags.length === 0) tags.push(h(NTag, { type: 'success', size: 'small' }, { default: () => '正常' }))
+      if (tags.length === 0) tags.push(h(NTag, { type: 'success', size: 'small', round: true, quaternary: true }, { default: () => '正常' }))
       
       return h(NSpace, null, { default: () => tags })
     }
@@ -270,22 +304,39 @@ const columns = [
       return h(NSpace, null, {
         default: () => [
           h(NButton, { 
-            size: 'small', 
-            secondary: true,
+            size: 'tiny', 
+            strong: true,
+            secondary: true, 
+            type: 'info',
             onClick: () => openEdit(row)
-          }, { default: () => '设置' }),
+          }, { 
+            default: () => '设置',
+            icon: () => h(NIcon, null, { default: () => h(EditIcon) })
+          }),
           h(NButton, {
-            size: 'small',
+            size: 'tiny',
+            strong: true,
+            secondary: true,
             type: 'warning',
-            quaternary: true,
             onClick: () => handleDirectBackup(row)
-          }, { default: () => '备份' }),
+          }, { 
+            default: () => '备份',
+            icon: () => h(NIcon, null, { default: () => h(BackupIcon) })
+          }),
           h(NPopconfirm, {
             onPositiveClick: () => handleDeleteUser(row.Id),
-            positiveText: '确认',
+            positiveText: '确认删除',
             negativeText: '取消'
           }, {
-            trigger: () => h(NButton, { size: 'small', type: 'error', quaternary: true }, { default: () => '删除' }),
+            trigger: () => h(NButton, { 
+              size: 'tiny', 
+              strong: true,
+              secondary: true,
+              type: 'error'
+            }, { 
+              default: () => '删除',
+              icon: () => h(NIcon, null, { default: () => h(DeleteIcon) })
+            }),
             default: () => `确定删除用户 ${row.Name}？`
           })
         ]
@@ -319,29 +370,6 @@ const handleCreateUser = async () => {
     console.error(e)
   } finally {
     creating.value = false
-  }
-}
-
-const handleDeleteUser = async (userId: string) => {
-  try {
-    await deleteEmbyUser(userId, activeServerId.value)
-    message.success('删除成功')
-    loadUsers()
-  } catch (e) {
-    console.error(e)
-  }
-}
-
-const openEdit = async (user: any) => {
-  editingUser.value = user
-  newPassword.value = ''
-  try {
-    const info = await getEmbyUserInfo(user.Id, activeServerId.value) as any
-    policy.value = info.Policy || {}
-    jsonRaw.value = JSON.stringify(policy.value, null, 2)
-    showEditModal.value = true
-  } catch (e) {
-    console.error(e)
   }
 }
 
@@ -379,17 +407,27 @@ const handleBackup = async () => {
   }
 }
 
+const openEdit = async (user: any) => {
+  editingUser.value = user
+  newPassword.value = ''
+  try {
+    const info = await getEmbyUserInfo(user.Id, activeServerId.value) as any
+    policy.value = info.Policy || {}
+    jsonRaw.value = JSON.stringify(policy.value, null, 2)
+    showEditModal.value = true
+  } catch (e) {
+    console.error(e)
+  }
+}
+
 const handleSavePolicy = async () => {
   if (!editingUser.value) return
-  
-  // 最终 JSON 校验
   try {
     policy.value = JSON.parse(jsonRaw.value)
   } catch (e) {
     message.error('JSON 格式非法，请检查后再试')
     return
   }
-
   savingPolicy.value = true
   try {
     await updateEmbyUserPolicy(editingUser.value.Id, policy.value, activeServerId.value)
@@ -423,10 +461,7 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-.emby-users-container {
-  padding: 10px;
-}
-.page-header {
-  margin-bottom: 20px;
-}
+.emby-users-container { padding: 10px; }
+.page-header { margin-bottom: 20px; }
+.main-card { margin-top: 12px; }
 </style>

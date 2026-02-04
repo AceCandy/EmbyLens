@@ -1,16 +1,30 @@
 <template>
   <div class="backup-manager">
-    <n-button size="small" secondary @click="showModal = true">
+    <n-button 
+      size="small" 
+      strong
+      secondary 
+      type="info"
+      @click="showModal = true"
+    >
       <template #icon><n-icon><HistoryIcon /></n-icon></template>
       配置备份管理
     </n-button>
 
-    <n-modal v-model:show="showModal" preset="card" title="配置备份历史" style="width: 700px">
+    <n-modal v-model:show="showModal" preset="card" title="配置备份历史" style="width: 700px" :bordered="false">
       <template #header-extra>
         <n-space>
           <n-popconfirm @positive-click="handleRestoreAll" positive-text="确定还原" negative-text="取消">
             <template #trigger>
-              <n-button size="tiny" type="warning" secondary :disabled="backups.length === 0" :loading="restoringAll">
+              <n-button 
+                size="tiny" 
+                type="warning" 
+                strong
+                secondary 
+                :disabled="backups.length === 0" 
+                :loading="restoringAll"
+              >
+                <template #icon><n-icon><RestoreIcon /></n-icon></template>
                 一键还原最新备份
               </n-button>
             </template>
@@ -18,7 +32,14 @@
           </n-popconfirm>
           <n-popconfirm @positive-click="handleClearAll" positive-text="确定清空" negative-text="取消">
             <template #trigger>
-              <n-button size="tiny" type="error" quaternary :disabled="backups.length === 0">
+              <n-button 
+                size="tiny" 
+                type="error" 
+                strong
+                secondary
+                :disabled="backups.length === 0"
+              >
+                <template #icon><n-icon><ClearIcon /></n-icon></template>
                 清空所有备份
               </n-button>
             </template>
@@ -37,6 +58,7 @@
           :loading="loading"
           size="small"
           :pagination="{ pageSize: 8 }"
+          :bordered="false"
         />
       </n-space>
     </n-modal>
@@ -44,10 +66,15 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch, h } from 'vue'
-import { NButton, NSpace, NPopconfirm, useMessage, NTag, NIcon } from 'naive-ui'
+import { ref, watch, h } from 'vue'
+import { NButton, NSpace, NPopconfirm, useMessage, NIcon, NModal, NAlert, NDataTable } from 'naive-ui'
 import { listEmbyBackups, restoreEmbyBackup, deleteEmbyBackup, clearEmbyBackups, restoreAllEmbyBackups } from '@/api/embyBackup'
-import { HistoryOutlined as HistoryIcon } from '@vicons/material'
+import { 
+  RestoreOutlined as RestoreIcon,
+  DeleteOutlined as DeleteIcon,
+  CleaningServicesOutlined as ClearIcon,
+  HistoryOutlined as HistoryIcon 
+} from '@vicons/material'
 
 const props = defineProps<{
   category: 'users' | 'libraries'
@@ -83,7 +110,15 @@ const columns = [
             positiveText: '确认还原',
             negativeText: '取消'
           }, {
-            trigger: () => h(NButton, { size: 'tiny', type: 'warning', secondary: true }, { default: () => '还原' }),
+            trigger: () => h(NButton, { 
+              size: 'tiny', 
+              type: 'warning', 
+              strong: true,
+              secondary: true 
+            }, { 
+              default: () => '还原',
+              icon: () => h(NIcon, null, { default: () => h(RestoreIcon) })
+            }),
             default: () => '确定要将此配置还原到服务器吗？当前设置将被覆盖。'
           }),
           h(NPopconfirm, {
@@ -91,8 +126,16 @@ const columns = [
             positiveText: '删除',
             negativeText: '取消'
           }, {
-            trigger: () => h(NButton, { size: 'tiny', type: 'error', quaternary: true }, { default: () => '删除' }),
-            default: () => '确定删除此备份文件吗？'
+            trigger: () => h(NButton, { 
+              size: 'tiny', 
+              type: 'error', 
+              strong: true,
+              secondary: true 
+            }, { 
+              default: () => '删除',
+              icon: () => h(NIcon, null, { default: () => h(DeleteIcon) })
+            }),
+            default: () => `确定删除此备份文件吗？`
           })
         ]
       })
@@ -161,3 +204,9 @@ watch(showModal, (val) => {
   if (val) loadBackups()
 })
 </script>
+
+<style scoped>
+.backup-manager {
+  display: inline-block;
+}
+</style>

@@ -20,13 +20,24 @@
         <n-input :value="modelValue.LibraryOptions?.MetadataCountryCode" @update:value="(val) => updateLibOpt('MetadataCountryCode', val)" placeholder="CN" />
       </n-form-item>
       
+import { 
+  AddOutlined as AddIcon
+} from '@vicons/material'
+
+// ... (props, emit, refs, etc.)
+
       <n-divider title-placement="left">媒体路径</n-divider>
       <n-dynamic-input
         v-model:value="localPaths"
         placeholder="请输入路径"
         @update:value="handlePathsChange"
       >
-        <template #create-button-default>添加路径</template>
+        <template #create-button-default>
+          <n-button strong secondary type="primary" size="small">
+            <template #icon><n-icon><AddIcon /></n-icon></template>
+            添加路径
+          </n-button>
+        </template>
       </n-dynamic-input>
 
       <n-divider title-placement="left">刮削设置</n-divider>

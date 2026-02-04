@@ -5,6 +5,7 @@
     preset="card"
     :title="'配置媒体库: ' + library?.Name"
     style="width: 1000px"
+    :bordered="false"
     segmented
   >
     <n-tabs type="line" animated>
@@ -42,9 +43,33 @@
 
     <template #action>
       <n-space justify="end">
-        <n-button @click="$emit('update:show', false)">取消</n-button>
-        <n-button type="warning" secondary @click="handleBackup" :loading="backingUp">备份当前配置</n-button>
-        <n-button type="primary" @click="handleSave" :loading="loading">保存设置</n-button>
+        <n-button 
+          strong 
+          secondary 
+          @click="$emit('update:show', false)"
+        >
+          <template #icon><n-icon><CloseIcon /></n-icon></template>
+          取消
+        </n-button>
+        <n-button 
+          type="warning" 
+          secondary 
+          strong 
+          @click="handleBackup" 
+          :loading="backingUp"
+        >
+          <template #icon><n-icon><BackupIcon /></n-icon></template>
+          备份当前配置
+        </n-button>
+        <n-button 
+          type="primary" 
+          strong 
+          @click="handleSave" 
+          :loading="loading"
+        >
+          <template #icon><n-icon><SaveIcon /></n-icon></template>
+          保存设置
+        </n-button>
       </n-space>
     </template>
   </n-modal>
@@ -52,13 +77,18 @@
 
 <script setup lang="ts">
 import { ref, watch } from 'vue'
-import { useMessage } from 'naive-ui'
+import { useMessage, NIcon, NButton, NSpace, NAlert, NInput, NTabs, NTabPane, NModal } from 'naive-ui'
 import BasicInfoTab from './tabs/BasicInfoTab.vue'
 import MetadataFetchersTab from './tabs/MetadataFetchersTab.vue'
 import ImageSettingsTab from './tabs/ImageSettingsTab.vue'
 import FeatureSwitchesTab from './tabs/FeatureSwitchesTab.vue'
 import { updateEmbyLibrary } from '@/api/embyLibraries'
 import { createEmbyBackup } from '@/api/embyBackup'
+import { 
+  BackupOutlined as BackupIcon,
+  SaveOutlined as SaveIcon,
+  CloseOutlined as CloseIcon
+} from '@vicons/material'
 
 const props = defineProps<{
   show: boolean
@@ -73,7 +103,6 @@ const backingUp = ref(false)
 const localData = ref<any>({ LibraryOptions: {} })
 const jsonRaw = ref('')
 
-// 当外部传入的 library 变化时（即打开新模态框时），初始化数据
 watch(() => props.library, (newVal) => {
   if (newVal) {
     localData.value = JSON.parse(JSON.stringify(newVal))
@@ -82,10 +111,8 @@ watch(() => props.library, (newVal) => {
   }
 }, { immediate: true })
 
-// 深度监听图形化界面的修改，实时同步到 JSON 字符串
 watch(localData, (newVal) => {
   const currentJson = JSON.stringify(newVal, null, 2)
-  // 只有当内容不一致时才同步，防止死循环
   if (currentJson !== jsonRaw.value) {
     jsonRaw.value = currentJson
   }
@@ -95,9 +122,7 @@ const handleJsonInput = (value: string) => {
   try {
     const parsed = JSON.parse(value)
     localData.value = parsed
-  } catch (e) {
-    // 解析失败时不更新 localData，允许用户输入过程中的临时错误
-  }
+  } catch (e) { }
 }
 
 const handleBackup = async () => {
