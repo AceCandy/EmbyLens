@@ -1,111 +1,138 @@
 <template>
   <div class="emby-tasks-container">
-    <div class="dashboard-bg-glow"></div>
-
-    <div class="glass-header">
-      <n-space align="center" justify="space-between">
-        <n-space align="center" :size="20">
-          <div class="header-icon">
-            <n-icon size="32" color="#fff"><AssignmentOutlined /></n-icon>
-          </div>
+    <n-space vertical size="large">
+      <!-- 页面标题 -->
+      <div class="page-header">
+        <n-space align="center" justify="space-between">
           <div>
-            <div class="main-title">Emby 任务计划中心</div>
-            <div class="sub-title">Scheduled Tasks • Server Maintenance</div>
+            <n-h2 prefix="bar" align-text>
+              <n-text type="primary">Emby 任务计划中心</n-text>
+            </n-h2>
+            <n-text depth="3">查看并管理 Emby 服务器的计划任务与维护操作。</n-text>
+          </div>
+          <n-button 
+            strong 
+            secondary 
+            circle 
+            type="primary" 
+            :loading="loading" 
+            @click="fetchTasks(true)"
+          >
+            <template #icon>
+              <n-icon><RefreshOutlined /></n-icon>
+            </template>
+          </n-button>
+        </n-space>
+      </div>
+
+      <!-- 任务列表数据展示 -->
+      <div v-if="tasks.length > 0" class="task-groups-wrapper">
+        <n-space vertical size="large">
+          <div v-for="(group, category) in groupedTasks" :key="category" class="category-section">
+            <n-divider title-placement="left">
+              <n-text depth="2" strong style="text-transform: uppercase; letter-spacing: 1px;">
+                {{ category }}
+              </n-text>
+            </n-divider>
+
+            <n-grid :x-gap="12" :y-gap="12" :cols="24" item-responsive responsive="screen">
+              <n-gi v-for="task in group" :key="task.Id" span="24 m:12 l:8">
+                <n-card 
+                  size="small" 
+                  hoverable 
+                  :class="{ 'running-card': task.State === 'Running' }"
+                  class="task-card"
+                >
+                  <template #header>
+                    <n-space align="center" :size="8">
+                      <n-icon 
+                        size="22" 
+                        :style="{ color: getCategoryColor(task.Category) }"
+                      >
+                        <component :is="getTaskIcon(task.Category)" />
+                      </n-icon>
+                      <n-text strong style="font-size: 14px">{{ task.Name }}</n-text>
+                    </n-space>
+                  </template>
+
+                  <template #header-extra>
+                    <n-button
+                      v-if="task.State !== 'Running'"
+                      quaternary
+                      circle
+                      size="small"
+                      type="primary"
+                      @click="handleRun(task.Id)"
+                    >
+                      <template #icon><n-icon><PlayArrowFilled /></n-icon></template>
+                    </n-button>
+                    <n-button
+                      v-else
+                      quaternary
+                      circle
+                      size="small"
+                      type="error"
+                      @click="handleStop(task.Id)"
+                    >
+                      <template #icon><n-icon><StopFilled /></n-icon></template>
+                    </n-button>
+                  </template>
+
+                  <n-space vertical size="small">
+                    <n-text depth="3" class="task-desc">
+                      {{ task.Description || '暂无任务描述' }}
+                    </n-text>
+
+                    <div class="status-area">
+                      <template v-if="task.State === 'Running'">
+                        <n-space vertical :size="4">
+                          <n-space justify="space-between">
+                            <n-text type="success" strong style="font-size: 12px">正在运行</n-text>
+                            <n-text type="success" style="font-size: 12px">{{ task.CurrentProgressPercentage?.toFixed(1) }}%</n-text>
+                          </n-space>
+                          <n-progress
+                            type="line"
+                            :percentage="task.CurrentProgressPercentage"
+                            :show-indicator="false"
+                            status="success"
+                            processing
+                            size="small"
+                          />
+                        </n-space>
+                      </template>
+                      <template v-else>
+                        <n-space justify="space-between" align="center">
+                          <n-text depth="3" style="font-size: 12px">上次运行时间</n-text>
+                          <n-text depth="2" style="font-size: 12px">
+                            {{ formatTaskDate(task.LastExecutionResult?.EndTimeUtc) }}
+                          </n-text>
+                        </n-space>
+                      </template>
+                    </div>
+                  </n-space>
+                </n-card>
+              </n-gi>
+            </n-grid>
           </div>
         </n-space>
-        <n-button circle secondary type="primary" :loading="loading" @click="fetchTasks(true)">
-          <template #icon><n-icon><RefreshOutlined /></n-icon></template>
-        </n-button>
-      </n-space>
-    </div>
-
-    <!-- 分组任务列表 -->
-    <div class="task-groups-wrapper">
-      <div v-for="(group, category) in groupedTasks" :key="category" class="category-section">
-        <!-- 分类标题 -->
-        <div class="category-header">
-          <div class="category-title">{{ category }}</div>
-          <div class="category-line"></div>
-        </div>
-
-        <!-- 任务列表项 -->
-        <div class="task-list">
-          <div v-for="task in group" :key="task.Id" class="task-list-item" :class="{ 'is-running': task.State === 'Running' }">
-            <!-- 左侧：图标与名称 -->
-            <div class="item-leading">
-              <div class="category-icon" :style="{ backgroundColor: getCategoryColor(task.Category) + '20', color: getCategoryColor(task.Category) }">
-                <n-icon size="24"><component :is="getTaskIcon(task.Category)" /></n-icon>
-              </div>
-              <div class="name-box">
-                <div class="task-name">{{ task.Name }}</div>
-                <div class="task-desc">{{ task.Description || '无描述' }}</div>
-              </div>
-            </div>
-
-            <!-- 中间：进度与状态 -->
-            <div class="item-content">
-              <div class="status-box">
-                <template v-if="task.State === 'Running'">
-                  <div class="progress-container">
-                    <div class="progress-label">正在运行 - {{ task.CurrentProgressPercentage?.toFixed(1) }}%</div>
-                    <n-progress
-                      type="line"
-                      :percentage="task.CurrentProgressPercentage"
-                      :show-indicator="false"
-                      color="#18a058"
-                      rail-color="rgba(255,255,255,0.05)"
-                      processing
-                      style="width: 200px"
-                    />
-                  </div>
-                </template>
-                <template v-else>
-                  <div class="idle-label">
-                    <div class="label">上次运行于</div>
-                    <div class="value">{{ formatTaskDate(task.LastExecutionResult?.EndTimeUtc) }}</div>
-                  </div>
-                </template>
-              </div>
-            </div>
-
-            <!-- 右侧：操作按钮 -->
-            <div class="item-actions">
-              <n-button
-                v-if="task.State !== 'Running'"
-                secondary
-                circle
-                type="primary"
-                title="启动任务"
-                @click="handleRun(task.Id)"
-              >
-                <template #icon><n-icon><PlayArrowFilled /></n-icon></template>
-              </n-button>
-              <n-button
-                v-else
-                secondary
-                circle
-                type="error"
-                title="停止任务"
-                @click="handleStop(task.Id)"
-              >
-                <template #icon><n-icon><StopFilled /></n-icon></template>
-              </n-button>
-            </div>
-          </div>
-        </div>
       </div>
-    </div>
+
+      <!-- 空状态 -->
+      <n-empty v-else-if="!loading" description="未发现计划任务" style="margin-top: 100px" />
+    </n-space>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, markRaw } from 'vue'
 import { 
-  NSpace, NIcon, NButton, NProgress, useMessage 
+  NSpace, NIcon, NButton, NProgress, useMessage, NH2, NText, 
+  NDivider, NGrid, NGi, NCard, NEmpty 
 } from 'naive-ui'
 import { 
-  AssignmentOutlined, RefreshOutlined, PlayArrowFilled, StopFilled,
-  StorageOutlined, SettingsSuggestOutlined, PhotoFilterOutlined, BuildCircleOutlined, HelpOutlineOutlined
+  RefreshOutlined, PlayArrowFilled, StopFilled,
+  StorageOutlined, SettingsSuggestOutlined, PhotoFilterOutlined, 
+  BuildCircleOutlined, HelpOutlineOutlined
 } from '@vicons/material'
 import { embyTasksApi } from '@/api/embyTasks'
 
@@ -114,8 +141,9 @@ const tasks = ref<any[]>([])
 const loading = ref(false)
 let timer: any = null
 
-// 分组计算属性
+// 分组逻辑
 const groupedTasks = computed(() => {
+  if (!tasks.value) return {}
   const visible = tasks.value.filter(t => !t.IsHidden)
   const groups: Record<string, any[]> = {}
   
@@ -132,9 +160,11 @@ const fetchTasks = async (showLoading = false) => {
   if (showLoading) loading.value = true
   try {
     const res = await embyTasksApi.list()
-    tasks.value = res as any[]
+    if (Array.isArray(res)) {
+      tasks.value = res
+    }
   } catch (err) {
-    console.error(err)
+    console.error('Failed to fetch emby tasks:', err)
   } finally {
     if (showLoading) loading.value = false
   }
@@ -162,7 +192,7 @@ const handleStop = async (id: string) => {
 
 const getCategoryColor = (category: string) => {
   const colors: any = {
-    'Library': '#0078d4',
+    'Library': 'var(--primary-color)',
     'System': '#f0a020',
     'Media': '#18a058',
     'Maintenance': '#d03050',
@@ -174,28 +204,32 @@ const getCategoryColor = (category: string) => {
 
 const getTaskIcon = (category: string) => {
   const icons: any = {
-    'Library': StorageOutlined,
-    'System': SettingsSuggestOutlined,
-    'Media': PhotoFilterOutlined,
-    'Maintenance': BuildCircleOutlined,
-    'Danmu': PhotoFilterOutlined,
-    'Bangumi': BuildCircleOutlined
+    'Library': markRaw(StorageOutlined),
+    'System': markRaw(SettingsSuggestOutlined),
+    'Media': markRaw(PhotoFilterOutlined),
+    'Maintenance': markRaw(BuildCircleOutlined),
+    'Danmu': markRaw(PhotoFilterOutlined),
+    'Bangumi': markRaw(BuildCircleOutlined)
   }
-  return icons[category] || HelpOutlineOutlined
+  return icons[category] || markRaw(HelpOutlineOutlined)
 }
 
 const formatTaskDate = (dateStr: string) => {
   if (!dateStr) return '从未运行'
-  const date = new Date(dateStr)
-  const now = new Date()
-  const diffMs = now.getTime() - date.getTime()
-  const diffMins = Math.floor(diffMs / 60000)
-  const diffHours = Math.floor(diffMins / 60)
-  
-  if (diffMins < 1) return '刚刚'
-  if (diffMins < 60) return `${diffMins} 分钟前`
-  if (diffHours < 24) return `${diffHours} 小时前`
-  return date.toLocaleDateString()
+  try {
+    const date = new Date(dateStr)
+    const now = new Date()
+    const diffMs = now.getTime() - date.getTime()
+    const diffMins = Math.floor(diffMs / 60000)
+    const diffHours = Math.floor(diffMins / 60)
+    
+    if (diffMins < 1) return '刚刚'
+    if (diffMins < 60) return `${diffMins} 分钟前`
+    if (diffHours < 24) return `${diffHours} 小时前`
+    return date.toLocaleString()
+  } catch (e) {
+    return '未知'
+  }
 }
 
 onMounted(() => {
@@ -210,142 +244,44 @@ onUnmounted(() => {
 
 <style scoped>
 .emby-tasks-container {
-  padding: 24px;
-  background-color: #0c0c0e;
-  min-height: 100vh;
-  color: #fff;
-  position: relative;
+  padding: 10px;
 }
 
-.dashboard-bg-glow {
-  position: absolute;
-  top: -100px;
-  right: -100px;
-  width: 600px;
-  height: 600px;
-  background: radial-gradient(circle, rgba(0, 120, 212, 0.05) 0%, transparent 70%);
-  pointer-events: none;
+.page-header {
+  margin-bottom: 20px;
 }
 
-.glass-header {
-  background: rgba(24, 24, 28, 0.7);
-  backdrop-filter: blur(20px);
-  padding: 20px 24px;
-  border-radius: 20px;
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  margin-bottom: 40px;
-}
-
-.header-icon {
-  background: linear-gradient(135deg, #0078d4, #00bcf2);
-  width: 56px; height: 56px; border-radius: 16px;
-  display: flex; align-items: center; justify-content: center;
-  box-shadow: 0 8px 16px rgba(0, 120, 212, 0.3);
-}
-
-.main-title { font-size: 24px; font-weight: 800; }
-.sub-title { font-size: 12px; color: #666; text-transform: uppercase; letter-spacing: 2px; }
-
-.task-groups-wrapper {
-  display: flex;
-  flex-direction: column;
-  gap: 40px;
-}
-
-.category-header {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  margin-bottom: 16px;
-  padding: 0 8px;
-}
-
-.category-title {
-  font-size: 16px;
-  font-weight: 900;
-  color: #0078d4;
-  text-transform: uppercase;
-  letter-spacing: 2px;
-  white-space: nowrap;
-}
-
-.category-line {
-  height: 1px;
-  flex: 1;
-  background: linear-gradient(to right, rgba(0, 120, 212, 0.3), transparent);
-}
-
-.task-list {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.task-list-item {
-  background: rgba(255, 255, 255, 0.02);
-  border-radius: 12px;
-  padding: 12px 20px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  border: 1px solid rgba(255, 255, 255, 0.03);
-  transition: all 0.3s ease;
-}
-
-.task-list-item:hover {
-  background: rgba(255, 255, 255, 0.05);
-  border-color: rgba(255, 255, 255, 0.1);
-  transform: translateX(5px);
-}
-
-.is-running {
-  border-color: rgba(24, 160, 88, 0.3);
-  background: rgba(24, 160, 88, 0.05);
-}
-
-.item-leading {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  flex: 1;
-}
-
-.category-icon {
-  width: 40px; height: 40px;
-  border-radius: 10px;
-  display: flex; align-items: center; justify-content: center;
-}
-
-.name-box {
+.task-card {
+  height: 100%;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   display: flex;
   flex-direction: column;
 }
 
-.task-name { font-size: 15px; font-weight: bold; color: #efeff5; }
-.task-desc { font-size: 12px; color: #555; }
-
-.item-content {
-  flex: 0 0 250px;
-  display: flex;
-  justify-content: center;
+.task-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--primary-color);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
-.progress-container {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
+.running-card {
+  border-color: var(--success-color);
+  background-color: rgba(24, 160, 88, 0.05);
 }
-.progress-label { font-size: 11px; color: #18a058; font-weight: bold; text-align: center; }
 
-.idle-label {
-  text-align: center;
+.task-desc {
+  font-size: 12px;
+  height: 36px;
+  line-height: 18px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
 }
-.idle-label .label { font-size: 10px; color: #444; text-transform: uppercase; }
-.idle-label .value { font-size: 12px; color: #666; }
 
-.item-actions {
-  flex: 0 0 80px;
-  display: flex;
-  justify-content: flex-end;
+.status-area {
+  margin-top: 8px;
+  min-height: 32px;
 }
 </style>
