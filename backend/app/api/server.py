@@ -198,3 +198,18 @@ async def get_emby_libraries():
     except Exception as e:
         logger.error(f"获取媒体库失败: {e}")
         return []
+
+@router.get("/items", summary="批量获取 Emby 项目详情")
+async def get_emby_items(ids: str, fields: str = "PrimaryImageTag,CommunityRating,ProductionYear,Type,SeriesId,SeriesName"):
+    service = get_emby_service()
+    if not service:
+        return []
+    try:
+        # 直接透传 Ids 参数给 Emby
+        resp = await service._request("GET", "/Items", params={"Ids": ids, "Fields": fields})
+        if resp and resp.status_code == 200:
+            return resp.json().get("Items", [])
+        return []
+    except Exception as e:
+        logger.error(f"批量获取项目失败: {e}")
+        return []

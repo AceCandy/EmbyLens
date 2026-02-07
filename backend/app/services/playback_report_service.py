@@ -13,7 +13,6 @@ class PlaybackReportService:
         if not service:
             return {"error": "Emby service not configured"}
         
-        # 补全桌面版调试工具中的完整 Headers
         custom_headers = {
             "X-Emby-Token": service.api_key,
             "X-Emby-Client": "Emby Web",
@@ -27,27 +26,19 @@ class PlaybackReportService:
         if endpoint.startswith("/"):
             full_endpoint = endpoint
             
-        # 使用自定义 headers 覆盖默认的
         url = f"{service.base_url}{full_endpoint}"
         full_params = {"api_key": service.api_key}
         if params:
             full_params.update(params)
 
-        logger.info(f"🔍 [PlaybackReport] Requesting: {url} with params {params}")
-        
         try:
             async with service._get_client() as client:
                 response = await client.request("GET", url, params=full_params, headers=custom_headers)
                 if response.status_code == 200:
-                    data = response.json()
-                    logger.info(f"✅ [PlaybackReport] {endpoint} Success. Data type: {type(data)}")
-                    return data
-                else:
-                    logger.error(f"❌ [PlaybackReport] {endpoint} Failed. Status: {response.status_code}, Body: {response.text[:200]}")
-                    return {"error": f"HTTP {response.status_code}", "detail": response.text[:200]}
+                    return response.json()
+                return {"error": f"HTTP {response.status_code}"}
         except Exception as e:
-            logger.error(f"💥 [PlaybackReport] {endpoint} Exception: {str(e)}")
-            return {"error": "Exception", "detail": str(e)}
+            return {"error": str(e)}
 
     @classmethod
     async def post_report_data(cls, endpoint: str, json_data: Dict[str, Any] = None, params: Dict[str, Any] = None) -> Any:
@@ -126,22 +117,32 @@ class PlaybackReportService:
 
     @classmethod
     async def get_breakdown_report(cls, report_type: str, days: int = 28, user_id: str = None):
-        """
-        report_type 可选: 
-        MoviesReport, TvShowsReport, DeviceName/BreakdownReport, 
-        PlaybackMethod/BreakdownReport, ItemType/BreakdownReport, 
-        UserId/BreakdownReport, HourlyReport
-        """
         params = {"days": days}
         if user_id:
             params["user_id"] = user_id
-        
-        # 特殊处理 HourlyReport，参考脚本中有 filter=Episode
         if report_type == "HourlyReport":
             params["filter"] = "Episode"
-            
         return await cls.get_report_data(report_type, params)
 
     @classmethod
     async def submit_custom_query(cls, query: str):
         return await cls.post_report_data("submit_custom_query", json_data={"CustomQueryString": query})
+
+    @classmethod
+    async def get_library_summary(cls):
+        service = await cls._get_service()
+        if not service: return None
+        try:
+            async def get_count(params):
+                resp = await service._request("GET", "/Items", params={"Recursive": "true", "IncludeItemTypes": "Movie,Episode", **params})
+                return resp.json().get("TotalRecordCount", 0) if resp and resp.status_code == 200 else 0
+            return {
+                "total": await get_count({}),
+                "is4k": await get_count({"VideoResolution": "4000"}),
+                "isHdr": await get_count({"HasHdr": "true"}),
+                "isDv": await get_count({"HasDolbyVision": "true"}),
+                "movies": await get_count({"IncludeItemTypes": "Movie"}),
+                "episodes": await get_count({"IncludeItemTypes": "Episode"})
+            }
+        except Exception:
+            return {"total": 0, "is4k": 0, "isHdr": 0, "isDv": 0, "movies": 0, "episodes": 0}

@@ -74,3 +74,74 @@ async def custom_query(query: str = Body(..., embed=True)):
 @router.get("/playlist", summary="获取用户播放清单统计")
 async def get_playlist(days: int = Query(28, description="统计天数")):
     return await PlaybackReportService.get_user_playlist(days)
+
+@router.get("/library-summary", summary="获取媒体库质量统计信息")
+async def get_library_summary():
+    return await PlaybackReportService.get_library_summary()
+
+@router.get("/image-proxy", summary="图片代理")
+async def image_proxy(item_id: Optional[str] = None, name: Optional[str] = None, type: str = "item"):
+    from fastapi.responses import Response
+    from app.services.emby import get_emby_service
+    import httpx
+    
+    service = get_emby_service()
+    if not service:
+        return Response(status_code=404)
+        
+    actual_id = item_id
+    
+    # 核心增强：支持按名称搜索 ID
+    if name:
+        try:
+            search_url = f"{service.base_url}/Items"
+            # 这里的 type 映射：Series 或 Movie
+            item_types = "Series" if type == "Series" else "Movie"
+            async with httpx.AsyncClient(timeout=5.0) as client:
+                search_resp = await client.get(search_url, params={
+                    "api_key": service.api_key,
+                    "SearchTerm": name,
+                    "IncludeItemTypes": item_types,
+                    "Recursive": "true",
+                    "Limit": 1
+                })
+                if search_resp.status_code == 200:
+                    items = search_resp.json().get("Items", [])
+                    if items:
+                        actual_id = items[0].get("Id")
+        except Exception:
+            pass
+
+    # 原有的数字 ID 解析逻辑
+    elif item_id and item_id.isdigit():
+        try:
+            search_url = f"{service.base_url}/Items"
+            async with httpx.AsyncClient(timeout=5.0) as client:
+                search_resp = await client.get(search_url, params={
+                    "api_key": service.api_key,
+                    "Ids": item_id
+                })
+                if search_resp.status_code == 200:
+                    items = search_resp.json().get("Items", [])
+                    if items:
+                        actual_id = items[0].get("Id")
+        except Exception:
+            pass
+            
+    if not actual_id:
+        return Response(status_code=404)
+
+    # 构建原生 Emby 图片请求
+    image_type = "user" if type == "user" else "item"
+    path = f"/Items/{actual_id}/Images/Primary" if image_type == "item" else f"/Users/{actual_id}/Images/Primary"
+    url = f"{service.base_url}{path}"
+    
+    async with httpx.AsyncClient(timeout=10.0) as client:
+        try:
+            resp = await client.get(url, params={"api_key": service.api_key, "maxWidth": 400})
+            if resp.status_code == 200:
+                return Response(content=resp.content, media_type=resp.headers.get("Content-Type", "image/jpeg"))
+        except Exception:
+            pass
+            
+    return Response(status_code=404)

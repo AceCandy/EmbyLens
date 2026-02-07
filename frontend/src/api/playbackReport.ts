@@ -42,7 +42,20 @@ export const playbackReportApi = {
   customQuery: (query: string) => 
     request.post('/api/playback-report/query', { query }),
 
-  // 获取用户播放清单统计
-  getPlaylist: (days: number = 28) => 
-    request.get('/api/playback-report/playlist', { params: { days } })
-}
+    // 获取用户播放清单统计
+
+    getPlaylist: (days: number = 28) => 
+
+      request.get('/api/playback-report/playlist', { params: { days } }),
+
+  
+
+    // 获取媒体库统计概览 (4K, HDR等)
+
+    getLibrarySummary: () =>
+
+      request.get('/api/playback-report/library-summary')
+
+  }
+
+  

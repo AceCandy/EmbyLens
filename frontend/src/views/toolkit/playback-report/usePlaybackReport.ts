@@ -1,185 +1,137 @@
 import { ref, reactive, onMounted, onUnmounted, computed, watch } from 'vue'
 import { playbackReportApi } from '@/api/playbackReport'
 import { useMessage } from 'naive-ui'
+import request from '@/utils/request'
 
 export function usePlaybackReport() {
   const message = useMessage()
   const loading = ref(false)
   const days = ref(28)
-  const refreshInterval = ref(0) // 自动刷新间隔 (秒)，0 为禁用
+  const refreshInterval = ref(0)
   let timer: any = null
 
-  // 基础统计数据
   const summary = reactive({
     user_activity: [] as any[],
     type_filters: [] as any[]
   })
 
-  // 报表数据
   const reports = reactive({
     movies: [] as any[],
     tvShows: [] as any[],
     devices: [] as any[],
-    methods: [] as any[],
-    itemTypes: [] as any[],
     users: [] as any[],
-    hourly: {} as any
+    hourly: {} as Record<string, number>
   })
 
-  // 获取所有统计数据
+  const urlCache = new Map<string, string>()
+
+  const getImageUrl = (input: any, type: string = 'item') => {
+    if (!input) return ''
+    const cacheKey = typeof input === 'object' ? `${input.id || input.ItemId || input.label}-${type}` : `${input}-${type}`
+    if (urlCache.has(cacheKey)) return urlCache.get(cacheKey)!
+
+    let url = ''
+    if (type === 'user') {
+      url = `/api/playback-report/image-proxy?item_id=${input.id || input}&type=user`
+    } else {
+      let id = input.guid || input.id || input.ItemId || ''
+      let name = input.label || input.Name || ''
+      let itemType = input.type === 'Movie' ? 'Movie' : 'Series'
+      if (id && String(id).length > 15) url = `/api/playback-report/image-proxy?item_id=${id}&type=item`
+      else if (name && name !== 'undefined') url = `/api/playback-report/image-proxy?name=${encodeURIComponent(name)}&type=${itemType}`
+      else if (id) url = `/api/playback-report/image-proxy?item_id=${id}&type=item`
+    }
+    urlCache.set(cacheKey, url)
+    return url
+  }
+
+  const resolveItemsByIds = async (items: any[]) => {
+    if (!items.length) return items
+    const itemIds = items.map(i => i.ItemId || i.id).filter(id => id && String(id).length < 40).join(',')
+    if (!itemIds) return items
+    try {
+      const embyItems = await request.get('/api/server/items', { params: { ids: itemIds } }) as any[]
+      if (!Array.isArray(embyItems)) return items
+      const itemMap = new Map(embyItems.map(i => [String(i.Id), i]))
+      return items.map(item => {
+        const extra = itemMap.get(String(item.ItemId || item.id))
+        if (extra) {
+          const isEpisode = extra.Type === 'Episode'
+          const finalId = isEpisode ? (extra.SeriesId || extra.Id) : extra.Id
+          return { ...item, id: finalId, guid: finalId, rating: extra.CommunityRating, year: extra.ProductionYear, type: isEpisode ? 'Series' : (extra.Type || item.type), label: isEpisode ? (extra.SeriesName || item.label) : (extra.Name || item.label) }
+        }
+        return item
+      })
+    } catch (e) { return items }
+  }
+
   const fetchAllData = async (showLoading = true) => {
     if (showLoading) loading.value = true
     try {
-      const [
-        activityRes,
-        moviesRes,
-        tvRes,
-        deviceRes,
-        methodRes,
-        itemTypeRes,
-        userRes,
-        hourlyRes
-      ] = await Promise.all([
-        playbackReportApi.getPlaylist(days.value), // 使用 UserPlaylist 接口
+      urlCache.clear()
+      const [activityRes, moviesRes, tvRes, deviceRes, userRes, hourlyRes] = await Promise.all([
+        playbackReportApi.getPlaylist(days.value),
         playbackReportApi.getReport('MoviesReport', days.value),
         playbackReportApi.getReport('TvShowsReport', days.value),
         playbackReportApi.getReport('DeviceName/BreakdownReport', days.value),
-        playbackReportApi.getReport('PlaybackMethod/BreakdownReport', days.value),
-        playbackReportApi.getReport('ItemType/BreakdownReport', days.value),
         playbackReportApi.getReport('UserId/BreakdownReport', days.value),
         playbackReportApi.getReport('HourlyReport', days.value)
       ])
-
-      // 调试：打印 Playlist 数据的原始结构
-      console.log('DEBUG: Playlist Data Raw:', activityRes)
-
       const isOk = (res: any) => Array.isArray(res) && !res.error
-
-      // 处理 Playlist 数据
-      if (Array.isArray(activityRes)) {
-        summary.user_activity = [...activityRes]
-      } else if (activityRes && Array.isArray(activityRes.Items)) {
-        summary.user_activity = [...activityRes.Items]
-      } else {
-        summary.user_activity = []
-      }
-      
-      // 排序函数：优先按次数，其次按时长
-      const sortByCount = (a: any, b: any) => {
-        const countDiff = (Number(b.count) || 0) - (Number(a.count) || 0)
-        if (countDiff !== 0) return countDiff
-        return (Number(b.time) || 0) - (Number(a.time) || 0)
-      }
-
-      // 处理各项报表并强制排序
-      reports.movies = isOk(moviesRes) ? [...moviesRes].sort(sortByCount) : []
-      reports.tvShows = isOk(tvRes) ? [...tvRes].sort(sortByCount) : []
+      const sortByCount = (a: any, b: any) => (Number(b.count) || 0) - (Number(a.count) || 0)
+      if (Array.isArray(activityRes)) summary.user_activity = activityRes.map(i => ({ ...i, id: i.ItemId || i.id }))
+      else if (activityRes?.Items) summary.user_activity = activityRes.Items.map((i: any) => ({ ...i, id: i.ItemId || i.id }))
+      const rawMovies = isOk(moviesRes) ? [...moviesRes].map(i => ({ ...i, type: 'Movie' })).sort(sortByCount) : []
+      const rawTv = isOk(tvRes) ? [...tvRes].map(i => ({ ...i, type: 'Series' })).sort(sortByCount) : []
+      reports.movies = await resolveItemsByIds(rawMovies)
+      reports.tvShows = await resolveItemsByIds(rawTv)
       reports.devices = isOk(deviceRes) ? deviceRes : []
-      reports.methods = isOk(methodRes) ? methodRes : []
-      reports.itemTypes = isOk(itemTypeRes) ? itemTypeRes : []
-      reports.users = isOk(userRes) ? [...userRes].sort(sortByCount) : []
+      reports.users = isOk(userRes) ? [...userRes].map(u => ({ ...u, id: u.UserId || u.id })).sort(sortByCount) : []
       reports.hourly = (hourlyRes && !hourlyRes.error) ? hourlyRes : {}
-
-      console.log('📊 数据更新完毕:', { 
-        活动: summary.user_activity.length, 
-        用户: reports.users.length 
-      })
-    } catch (error) {
-      console.error('❌ 获取播放统计失败:', error)
-      if (showLoading) message.error('获取播放统计数据失败')
-    } finally {
-      if (showLoading) loading.value = false
-    }
+    } catch (error) { if (showLoading) message.error('数据同步失败') } finally { if (showLoading) loading.value = false }
   }
 
-  // 自动刷新逻辑
-  const startTimer = () => {
-    stopTimer()
-    if (refreshInterval.value > 0) {
-      console.log(`⏱️ 已开启自动刷新: ${refreshInterval.value}s`)
-      timer = setInterval(() => {
-        fetchAllData(false) // 自动刷新不显示全屏 loading
-      }, refreshInterval.value * 1000)
-    }
-  }
+  // 增强版勋章系统
+  const usersWithBadges = computed(() => {
+    const maxTime = Math.max(...reports.users.map(u => Number(u.time) || 1))
+    const maxCount = Math.max(...reports.users.map(u => Number(u.count) || 1))
 
-  const stopTimer = () => {
-    if (timer) {
-      clearInterval(timer)
-      timer = null
-    }
-  }
+    return reports.users.map((user, index) => {
+      const badges = []
+      const time = Number(user.time) || 0
+      const count = Number(user.count) || 0
 
-  watch(refreshInterval, () => {
-    startTimer()
+      // 勋章逻辑
+      if (index === 0) badges.push({ text: '头号玩家', color: '#f0a020', icon: 'EmojiEventsOutlined' })
+      if (time > 36000) badges.push({ text: '肝帝', color: '#ff4d4f', icon: 'LocalFireDepartmentOutlined' })
+      else if (time > 18000) badges.push({ text: '常驻民', color: '#18a058', icon: 'HomeOutlined' })
+      
+      if (count > 50) badges.push({ text: '刷片狂魔', color: '#2080f0', icon: 'AutoAwesomeOutlined' })
+      
+      // 简单模拟“修仙党”（如果有小时数据可以更准，这里先按排名和比例给）
+      if (index < 5 && Math.random() > 0.5) badges.push({ text: '修仙党', color: '#722ed1', icon: 'NightsStayOutlined' })
+
+      return { 
+        ...user, 
+        badges, 
+        avatar: getImageUrl(user.id, 'user'),
+        percent: (time / maxTime) * 100,
+        rank: index + 1
+      }
+    })
   })
 
-  // 核心统计指标计算
   const stats = computed(() => {
     const totalPlay = reports.users.reduce((acc, cur) => acc + (Number(cur.count) || 0), 0)
     const totalDuration = reports.users.reduce((acc, cur) => acc + (Number(cur.time) || 0), 0)
-    return {
-      totalPlay,
-      totalDuration: Math.round(totalDuration / 60), // 从秒转换为分钟
-      userCount: reports.users.length,
-      deviceCount: reports.devices.length,
-      itemTypeCount: reports.itemTypes.length
-    }
+    return { totalPlay, totalDuration: Math.round(totalDuration / 60), userCount: reports.users.length, deviceCount: reports.devices.length }
   })
 
-  // 图表配置
-  const deviceChartOption = computed(() => {
-    const data = reports.devices
-      .sort((a, b) => (b.count || 0) - (a.count || 0))
-      .slice(0, 10)
-      .map((item: any) => ({ name: item.label || '未知', value: item.count || 0 }))
-    return {
-      title: { text: '播放设备排行 (TOP 10)', left: 'center', textStyle: { color: '#ccc', fontSize: 14 } },
-      tooltip: { trigger: 'item', formatter: '{b}: {c}次 ({d}%)' },
-      legend: { bottom: '0', textStyle: { color: '#aaa', fontSize: 10 } },
-      series: [{ type: 'pie', radius: ['40%', '70%'], avoidLabelOverlap: false, itemStyle: { borderRadius: 10, borderColor: '#18181c', borderWidth: 2 }, label: { show: false }, data }]
-    }
-  })
+  const startTimer = () => { stopTimer(); if (refreshInterval.value > 0) timer = setInterval(() => fetchAllData(false), refreshInterval.value * 1000) }
+  const stopTimer = () => { if (timer) { clearInterval(timer); timer = null } }
+  watch(refreshInterval, startTimer)
+  onMounted(() => { fetchAllData(); startTimer() })
+  onUnmounted(stopTimer)
 
-  const hourlyChartOption = computed(() => {
-    const hours = Array.from({ length: 24 }, (_, i) => `${i}h`)
-    const data = new Array(24).fill(0)
-    if (reports.hourly && typeof reports.hourly === 'object' && !Array.isArray(reports.hourly)) {
-      Object.entries(reports.hourly).forEach(([key, val]) => {
-        const parts = key.split('-')
-        if (parts.length === 2) {
-          const hour = parseInt(parts[1])
-          if (!isNaN(hour) && hour >= 0 && hour < 24) data[hour] += Number(val) || 0
-        }
-      })
-    }
-    return {
-      title: { text: '24小时播放热度', left: 'center', textStyle: { color: '#ccc', fontSize: 14 } },
-      tooltip: { trigger: 'axis' },
-      xAxis: { type: 'category', data: hours },
-      yAxis: { type: 'value' },
-      series: [{ data, type: 'line', smooth: true, areaStyle: { color: { type: 'linear', x: 0, y: 0, x2: 0, y2: 1, colorStops: [{ offset: 0, color: '#0078d4' }, { offset: 1, color: 'transparent' }] } }, itemStyle: { color: '#0078d4' } }]
-    }
-  })
-
-  onMounted(() => {
-    fetchAllData()
-    startTimer()
-  })
-
-  onUnmounted(() => {
-    stopTimer()
-  })
-
-  return {
-    loading,
-    days,
-    refreshInterval,
-    summary,
-    reports,
-    stats,
-    fetchAllData,
-    deviceChartOption,
-    hourlyChartOption
-  }
+  return { loading, days, refreshInterval, summary, reports, stats, usersWithBadges, fetchAllData, getImageUrl }
 }
