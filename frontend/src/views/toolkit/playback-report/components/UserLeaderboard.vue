@@ -1,10 +1,5 @@
 <template>
   <div class="user-pulse-leaderboard">
-    <div class="section-title">
-      <n-icon :size="24"><PeopleOutlined /></n-icon>
-      <span>活跃用户排行榜</span>
-    </div>
-
     <!-- 领奖台 (Top 3) -->
     <div class="podium-container">
       <div v-for="user in podiumUsers" :key="user.id" class="podium-item" :class="'rank-' + user.rank">
@@ -13,9 +8,9 @@
           <div class="glow-ring"></div>
           <n-avatar
             round
-            :size="user.rank === 1 ? 100 : 80"
+            :size="user.rank === 1 ? 90 : 70"
             :src="user.avatar"
-            fallback-src="/fallback-avatar.png"
+            fallback-src="/favicon.svg"
             class="user-avatar"
           />
           <div class="rank-badge">{{ user.rank }}</div>
@@ -27,8 +22,13 @@
           <span class="time">{{ formatDuration(user.time) }}</span>
         </div>
         <div class="badge-row">
-          <div v-for="badge in user.badges" :key="badge.text" class="achievement-chip" :style="{ backgroundColor: badge.color + '20', color: badge.color }">
-            <n-icon><component :is="badge.icon" /></n-icon>
+          <div 
+            v-for="badge in user.badges" 
+            :key="badge.text" 
+            class="achievement-chip" 
+            :style="{ backgroundColor: badge.color + '15', color: badge.color }"
+          >
+            <n-icon><component :is="markRaw(badge.icon)" /></n-icon>
             {{ badge.text }}
           </div>
         </div>
@@ -43,20 +43,23 @@
           round
           size="medium"
           :src="user.avatar"
-          fallback-src="/fallback-avatar.png"
+          fallback-src="/favicon.svg"
         />
         <div class="main-info">
           <div class="name-line">
             <span class="name">{{ user.label }}</span>
             <div class="mini-badges">
               <span v-for="badge in user.badges" :key="badge.text" :style="{ color: badge.color }">
-                <n-icon><component :is="badge.icon" /></n-icon>
+                <n-icon><component :is="markRaw(badge.icon)" /></n-icon>
               </span>
             </div>
           </div>
           <!-- 活跃度进度条 -->
           <div class="progress-track">
-            <div class="progress-bar" :style="{ width: user.percent + '%', backgroundColor: getRankColor(user.rank) }"></div>
+            <div 
+              class="progress-bar" 
+              :style="{ width: user.percent + '%', backgroundColor: getRankColor(user.rank) }"
+            ></div>
           </div>
         </div>
         <div class="data-info">
@@ -69,7 +72,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, markRaw } from 'vue'
 import { NAvatar, NIcon } from 'naive-ui'
 import { 
   PeopleOutlined, 
@@ -86,7 +89,6 @@ const props = defineProps<{
 
 const podiumUsers = computed(() => {
   const top3 = props.users.slice(0, 3)
-  // 顺序调整为：2, 1, 3 这种经典领奖台布局
   const result = []
   if (top3[1]) result.push(top3[1])
   if (top3[0]) result.push(top3[0])
@@ -106,7 +108,7 @@ const getRankColor = (rank: number) => {
   if (rank === 1) return '#f0a020'
   if (rank === 2) return '#c0c0c0'
   if (rank === 3) return '#b87333'
-  return '#0078d4'
+  return 'var(--primary-color)'
 }
 </script>
 
@@ -115,23 +117,13 @@ const getRankColor = (rank: number) => {
   padding: 10px 0;
 }
 
-.section-title {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  font-size: 20px;
-  font-weight: 800;
-  color: #fff;
-  margin-bottom: 30px;
-}
-
 /* 领奖台样式 */
 .podium-container {
   display: flex;
   justify-content: center;
   align-items: flex-end;
-  gap: 40px;
-  margin-bottom: 50px;
+  gap: 24px;
+  margin-bottom: 40px;
   padding-top: 20px;
 }
 
@@ -140,39 +132,39 @@ const getRankColor = (rank: number) => {
   flex-direction: column;
   align-items: center;
   transition: transform 0.3s ease;
+  width: 140px;
 }
-.podium-item:hover { transform: translateY(-10px); }
+.podium-item:hover { transform: translateY(-5px); }
 
 .avatar-wrapper {
   position: relative;
-  margin-bottom: 15px;
+  margin-bottom: 12px;
 }
 
-.rank-1 { order: 2; margin-top: -30px; }
+.rank-1 { order: 2; margin-top: -20px; }
 .rank-2 { order: 1; }
 .rank-3 { order: 3; }
 
 .rank-crown {
   position: absolute;
-  top: -25px;
+  top: -20px;
   left: 50%;
   transform: translateX(-50%) rotate(-10deg);
-  font-size: 30px;
+  font-size: 24px;
   z-index: 10;
-  filter: drop-shadow(0 0 10px rgba(240, 160, 32, 0.8));
+  filter: drop-shadow(0 0 8px rgba(240, 160, 32, 0.6));
 }
 
 .glow-ring {
   position: absolute;
-  top: -5px;
-  left: -5px;
-  right: -5px;
-  bottom: -5px;
+  top: -4px;
+  left: -4px;
+  right: -4px;
+  bottom: -4px;
   border-radius: 50%;
   border: 2px solid transparent;
-  animation: rotate 4s linear infinite;
 }
-.rank-1 .glow-ring { border-color: #f0a020; box-shadow: 0 0 20px rgba(240, 160, 32, 0.4); }
+.rank-1 .glow-ring { border-color: #f0a020; box-shadow: 0 0 15px rgba(240, 160, 32, 0.3); }
 .rank-2 .glow-ring { border-color: #c0c0c0; }
 .rank-3 .glow-ring { border-color: #b87333; }
 
@@ -180,8 +172,8 @@ const getRankColor = (rank: number) => {
   position: absolute;
   bottom: 0;
   right: 0;
-  width: 28px;
-  height: 28px;
+  width: 24px;
+  height: 24px;
   background: #333;
   color: #fff;
   border-radius: 50%;
@@ -189,85 +181,92 @@ const getRankColor = (rank: number) => {
   align-items: center;
   justify-content: center;
   font-weight: bold;
-  border: 2px solid #18181c;
+  font-size: 12px;
+  border: 2px solid var(--card-color);
 }
 .rank-1 .rank-badge { background: #f0a020; color: #000; }
 
 .user-name {
-  font-size: 18px;
+  font-size: 15px;
   font-weight: bold;
-  color: #fff;
-  margin-bottom: 5px;
+  color: var(--text-color);
+  margin-bottom: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: 100%;
+  text-align: center;
 }
 
 .user-stats {
-  font-size: 13px;
-  color: #aaa;
-  margin-bottom: 12px;
+  font-size: 12px;
+  color: var(--text-color-3);
+  margin-bottom: 10px;
 }
-.user-stats .count { color: #0078d4; font-weight: bold; }
+.user-stats .count { color: var(--primary-color); font-weight: bold; }
 
 .badge-row {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: 4px;
   justify-content: center;
 }
 
 .achievement-chip {
-  padding: 2px 10px;
-  border-radius: 20px;
-  font-size: 11px;
+  padding: 1px 8px;
+  border-radius: 12px;
+  font-size: 10px;
   font-weight: bold;
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 3px;
 }
 
 /* 列表样式 */
 .list-container {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 8px;
 }
 
 .user-list-row {
-  background: rgba(255, 255, 255, 0.03);
-  padding: 12px 20px;
-  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.02);
+  padding: 10px 16px;
+  border-radius: 12px;
   display: flex;
   align-items: center;
-  gap: 15px;
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  gap: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.04);
   transition: all 0.2s;
 }
 .user-list-row:hover {
-  background: rgba(255, 255, 255, 0.06);
-  transform: scale(1.01);
+  background: rgba(255, 255, 255, 0.04);
+  transform: translateX(4px);
+  border-color: var(--primary-color);
 }
 
 .rank-num {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 900;
   font-style: italic;
-  color: #666;
-  width: 30px;
+  color: var(--text-color-3);
+  width: 28px;
 }
 
 .main-info {
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 4px;
 }
 
 .name-line {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
 }
-.name-line .name { font-weight: bold; color: #efeff5; }
-.mini-badges { display: flex; gap: 4px; font-size: 14px; }
+.name-line .name { font-weight: bold; font-size: 14px; color: var(--text-color); }
+.mini-badges { display: flex; gap: 4px; font-size: 12px; }
 
 .progress-track {
   height: 4px;
@@ -285,12 +284,7 @@ const getRankColor = (rank: number) => {
 .data-info {
   text-align: right;
 }
-.data-info .val { font-size: 16px; font-weight: bold; color: #fff; }
-.data-info .val small { font-size: 10px; color: #666; }
-.data-info .sub { font-size: 11px; color: #666; }
-
-@keyframes rotate {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
-}
+.data-info .val { font-size: 14px; font-weight: bold; color: var(--text-color); }
+.data-info .val small { font-size: 10px; color: var(--text-color-3); }
+.data-info .sub { font-size: 11px; color: var(--text-color-3); }
 </style>
