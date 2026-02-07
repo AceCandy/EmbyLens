@@ -200,7 +200,7 @@ async def get_emby_libraries():
         return []
 
 @router.get("/items", summary="批量获取 Emby 项目详情")
-async def get_emby_items(ids: str, fields: str = "PrimaryImageTag,CommunityRating,ProductionYear,Type,SeriesId,SeriesName"):
+async def get_emby_items(ids: str, fields: str = "PrimaryImageTag,CommunityRating,ProductionYear,Type,SeriesId,SeriesName,IndexNumber,ParentIndexNumber"):
     service = get_emby_service()
     if not service:
         return []
