@@ -74,7 +74,9 @@ async def get_current_user(request: Request, db: AsyncSession = Depends(get_db))
                     if token_ps:
                         current_ps = user.hashed_password[:16]
                         if token_ps != current_ps:
-                            raise HTTPException(status_code=401, detail="Password changed, please re-login")
+                            # 仅在开启验证时报错
+                            if ui_auth_enabled or api_auth_enabled:
+                                raise HTTPException(status_code=401, detail="Password changed, please re-login")
                     return user
             
             # B. 尝试作为 静态 API Token 匹配
@@ -83,16 +85,16 @@ async def get_current_user(request: Request, db: AsyncSession = Depends(get_db))
                 result = await db.execute(select(User).where(User.username == "admin"))
                 return result.scalars().first()
         except HTTPException as e:
-            # 仅在非免密模式下透传 401
+            # 仅在开启验证时透传 401
             if ui_auth_enabled or api_auth_enabled:
                 raise e
         except Exception:
-            # Token 解析出错，如果不开启强制认证，可以忽略并走后面的降级逻辑
+            # Token 解析出错，如果不开启强制认证，忽略异常
             if ui_auth_enabled or api_auth_enabled:
                 raise HTTPException(status_code=401, detail="Invalid token")
 
     # 2. 无效 Token 处理
-    if api_auth_enabled or ui_auth_enabled:
+    if ui_auth_enabled:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Authentication required",

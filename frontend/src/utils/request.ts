@@ -39,11 +39,16 @@ service.interceptors.response.use(
       switch (status) {
         case 401:
           // 未登录或 Token 过期
-          // 如果当前不是登录页，则跳转
+          // 清除无效 Token，防止后续请求继续携带失效 Token 导致死循环
+          localStorage.removeItem('lens_access_token')
+          
           if (!window.location.pathname.includes('/login')) {
-             // 可以在此处清除无效 Token 并跳转
-             // localStorage.removeItem('lens_access_token')
-             // window.location.href = '/login'
+            // 提示用户
+            message.error('登录状态已失效，正在尝试重新加载...')
+            // 给用户一点反应时间，然后尝试刷新或跳转
+            setTimeout(() => {
+              window.location.reload()
+            }, 1500)
           }
           break
         case 403:

@@ -58,19 +58,25 @@ async def audit_middleware(request: Request, call_next):
             token = auth_header.replace("Bearer ", "") if auth_header and auth_header.startswith("Bearer ") else None
             
             valid = False
-            if token:
+            # 如果不带 token 且 ui 未开启验证，或者请求是 GET，则默认有效
+            if not token and not ui_auth_enabled:
+                valid = True
+            elif request.method == "GET":
+                valid = True
+            elif token:
+                # 检查静态 Token
                 static_token = await ConfigService.get("api_token")
                 if static_token and token == static_token:
                     valid = True
                 else:
+                    # 检查 JWT Token
                     payload = decode_access_token(token)
                     if payload and payload.get("type") != "2fa_pending":
                         valid = True
-            elif not ui_auth_enabled:
-                valid = True
-            elif request.method == "GET":
-                valid = True
-                
+                    # 如果 JWT 失效但 ui 未开启验证，仍然视为有效 (由后端 get_current_user 处理降级)
+                    elif not ui_auth_enabled:
+                        valid = True
+            
             if not valid:
                 from fastapi.responses import JSONResponse
                 return JSONResponse(status_code=401, content={"detail": "API Authentication Required"})
