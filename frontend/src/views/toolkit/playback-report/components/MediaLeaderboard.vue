@@ -8,27 +8,40 @@
       
       <div class="pulse-row">
         <div v-for="(item, index) in section.data.slice(0, 10)" :key="item.id || index" class="pulse-item">
-          <!-- 背景毛玻璃海报 -->
-          <div class="pulse-bg-poster">
-             <img :src="getImageUrl(item)" />
-          </div>
+          <!-- 背景光晕 -->
+          <div class="rank-glow" :class="'glow-' + (index + 1)"></div>
           
-          <!-- 前景排名与信息 -->
-          <div class="pulse-content">
-            <div class="rank-number">{{ index + 1 }}</div>
+          <div class="item-container" :class="'frame-rank-' + (index + 1)">
+            <!-- 皇冠与奖章图标 -->
+            <div class="top-honor" v-if="index < 3">
+              <span v-if="index === 0" class="honor-icon crown">👑</span>
+              <span v-if="index === 1" class="honor-icon medal">🥈</span>
+              <span v-if="index === 2" class="honor-icon medal">🥉</span>
+            </div>
+
+            <!-- 霸气的数字排行 (现在在奖框后方一点) -->
+            <div class="big-rank-number" :class="'text-rank-' + (index + 1)">
+              {{ index + 1 }}
+            </div>
+
+            <!-- 海报主体 (包裹在奖框中) -->
             <div class="main-poster-wrapper">
               <img :src="getImageUrl(item)" class="main-poster" onerror="this.src='/fallback-poster.png'" />
               
-              <!-- 顶部浮层：年份和评分 -->
-              <div class="top-info" v-if="item.year || item.rating">
-                <span class="year" v-if="item.year">{{ item.year }}</span>
-                <span class="rating" v-if="item.rating">⭐ {{ item.rating.toFixed(1) }}</span>
+              <!-- 播放量标签 (前三名变色) -->
+              <div class="play-tag" :class="'tag-rank-' + (index + 1)">
+                {{ item.count }} 次播放
               </div>
-
-              <div class="play-tag">{{ item.count }} 次播放</div>
+              
+              <!-- 顶部年份评分 -->
+              <div class="poster-top-info" v-if="item.year || item.rating">
+                <span v-if="item.rating" class="rating-val">⭐{{ item.rating.toFixed(1) }}</span>
+                <span v-else-if="item.year">{{ item.year }}</span>
+              </div>
             </div>
-            <div class="item-name">{{ item.label }}</div>
           </div>
+          
+          <div class="item-name">{{ item.label }}</div>
         </div>
       </div>
     </div>
@@ -53,24 +66,104 @@ const sections = computed(() => [
 </script>
 
 <style scoped>
-/* 样式保持不变 */
-.media-pulse-container { display: flex; flex-direction: column; gap: 40px; }
-.section-title { display: flex; align-items: center; gap: 12px; font-size: 22px; font-weight: 900; color: #fff; margin-bottom: 24px; padding-left: 10px; border-left: 5px solid #0078d4; }
-.pulse-row { display: flex; gap: 24px; overflow-x: auto; padding-bottom: 20px; scrollbar-width: none; }
+.media-pulse-container { display: flex; flex-direction: column; gap: 60px; }
+.section-title { display: flex; align-items: center; gap: 12px; font-size: 22px; font-weight: 900; color: #fff; margin-bottom: 30px; padding-left: 10px; border-left: 5px solid #0078d4; }
+
+.pulse-row { display: flex; gap: 40px; overflow-x: auto; padding: 40px 10px 30px 50px; scrollbar-width: none; }
 .pulse-row::-webkit-scrollbar { display: none; }
-.pulse-item { position: relative; flex: 0 0 180px; height: 320px; display: flex; flex-direction: column; align-items: center; transition: all 0.3s ease; }
-.pulse-item:hover { transform: translateY(-10px); }
-.pulse-bg-poster { position: absolute; top: 40px; left: 10px; right: 10px; bottom: 60px; z-index: 0; filter: blur(20px) opacity(0.3); overflow: hidden; border-radius: 20px; }
-.pulse-bg-poster img { width: 100%; height: 100%; object-fit: cover; }
-.pulse-content { position: relative; z-index: 1; width: 100%; text-align: center; }
-.rank-number { font-size: 60px; font-weight: 900; line-height: 1; color: rgba(255, 255, 255, 0.1); font-style: italic; margin-bottom: -25px; margin-left: -120px; z-index: 2; position: relative; }
-.main-poster-wrapper { position: relative; width: 160px; height: 240px; margin: 0 auto; border-radius: 12px; overflow: hidden; box-shadow: 0 15px 35px rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.1); }
+
+.pulse-item { position: relative; flex: 0 0 180px; display: flex; flex-direction: column; transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+.pulse-item:hover { transform: translateY(-15px) scale(1.05); z-index: 10; }
+
+.item-container { position: relative; width: 160px; height: 240px; border-radius: 16px; }
+
+/* 荣誉图标样式 */
+.top-honor {
+  position: absolute;
+  top: -35px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 20;
+  pointer-events: none;
+}
+.honor-icon { font-size: 36px; filter: drop-shadow(0 0 10px rgba(0,0,0,0.5)); }
+.crown { filter: drop-shadow(0 0 15px rgba(240, 160, 32, 0.8)); animation: float 3s ease-in-out infinite; }
+
+/* 前三名专属奖框 */
+.frame-rank-1 { border: 3px solid #f0a020; box-shadow: 0 0 25px rgba(240, 160, 32, 0.4); padding: 2px; }
+.frame-rank-2 { border: 3px solid #c0c0c0; box-shadow: 0 0 20px rgba(192, 192, 192, 0.3); padding: 2px; }
+.frame-rank-3 { border: 3px solid #b87333; box-shadow: 0 0 15px rgba(184, 115, 51, 0.3); padding: 2px; }
+
+/* 超大排名数字 */
+.big-rank-number {
+  position: absolute;
+  left: -55px;
+  bottom: -15px;
+  font-size: 110px;
+  font-weight: 950;
+  line-height: 0.8;
+  font-style: italic;
+  z-index: 5;
+  pointer-events: none;
+  filter: drop-shadow(4px 4px 10px rgba(0,0,0,0.9));
+}
+
+.text-rank-1 { color: #f0a020; -webkit-text-stroke: 1px #ffd700; }
+.text-rank-2 { color: #c0c0c0; -webkit-text-stroke: 1px #e8e8e8; }
+.text-rank-3 { color: #b87333; -webkit-text-stroke: 1px #cd7f32; }
+.text-rank-4, .text-rank-5, .text-rank-6, .text-rank-7, .text-rank-8, .text-rank-9, .text-rank-10 { 
+  color: #222; -webkit-text-stroke: 2px rgba(255,255,255,0.4); 
+}
+
+.main-poster-wrapper {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #18181c;
+  z-index: 2;
+}
+
 .main-poster { width: 100%; height: 100%; object-fit: cover; }
-.top-info { position: absolute; top: 0; left: 0; right: 0; padding: 6px; background: linear-gradient(rgba(0,0,0,0.8), transparent); display: flex; justify-content: space-between; font-size: 10px; color: #fff; font-weight: bold; }
-.rating { color: #f0a020; }
-.play-tag { position: absolute; bottom: 0; left: 0; right: 0; background: rgba(0, 120, 212, 0.9); color: white; font-size: 12px; font-weight: bold; padding: 4px 0; }
-.item-name { margin-top: 15px; font-size: 14px; font-weight: bold; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 0 5px; }
-.pulse-item:nth-child(1) .main-poster-wrapper { border-color: #f0a020; box-shadow: 0 0 20px rgba(240, 160, 32, 0.3); }
-.pulse-item:nth-child(1) .rank-number { color: rgba(240, 160, 32, 0.2); }
-.pulse-item:nth-child(1) .play-tag { background: #f0a020; color: #000; }
+
+.play-tag {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  background: linear-gradient(transparent, rgba(0, 120, 212, 0.95));
+  color: white; font-size: 12px; font-weight: 900; padding: 15px 0 8px;
+  text-align: center;
+}
+.tag-rank-1 { background: linear-gradient(transparent, rgba(240, 160, 32, 0.95)); color: #000; }
+.tag-rank-2 { background: linear-gradient(transparent, rgba(192, 192, 192, 0.95)); color: #000; }
+.tag-rank-3 { background: linear-gradient(transparent, rgba(184, 115, 51, 0.95)); }
+
+.poster-top-info {
+  position: absolute; top: 0; left: 0; right: 0;
+  padding: 8px; background: linear-gradient(rgba(0,0,0,0.8), transparent);
+  display: flex; justify-content: flex-end; font-size: 12px; color: #fff; font-weight: 900;
+}
+.rating-val { color: #f0a020; text-shadow: 0 0 5px rgba(240, 160, 32, 0.5); }
+
+.item-name {
+  margin-top: 20px; font-size: 15px; font-weight: bold; color: #fff;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  padding: 0 5px; text-align: center;
+}
+
+/* 动画 */
+@keyframes float {
+  0% { transform: translateX(-50%) translateY(0); }
+  50% { transform: translateX(-50%) translateY(-10px); }
+  100% { transform: translateX(-50%) translateY(0); }
+}
+
+.rank-glow {
+  position: absolute; top: 10%; left: 10%; right: 10%; bottom: 10%;
+  z-index: 0; filter: blur(50px); opacity: 0; transition: opacity 0.4s;
+}
+.pulse-item:hover .rank-glow { opacity: 0.5; }
+.glow-1 { background: #f0a020; }
+.glow-2 { background: #c0c0c0; }
+.glow-3 { background: #b87333; }
 </style>
