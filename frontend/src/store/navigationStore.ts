@@ -69,6 +69,7 @@ watch(isHeaderSticky, (val) => {
   localStorage.setItem(STICKY_HEADER_KEY, String(val))
 })
 
+// 核心修正：重组默认布局，将 Emby 核心运维功能聚拢
 export const defaultLayout: MenuGroup[] = [
   {
     key: 'DashboardView',
@@ -85,12 +86,23 @@ export const defaultLayout: MenuGroup[] = [
     items: []
   },
   {
-    key: 'group-emby',
-    label: 'EMBY工具',
+    key: 'group-emby-mgmt',
+    label: 'Emby 核心运维',
     visible: true,
     type: 'group',
     items: [
       'PlaybackReportView',
+      'EmbyUsersView',
+      'EmbyLibrariesView',
+      'EmbyScheduledTasksView'
+    ]
+  },
+  {
+    key: 'group-emby-tools',
+    label: 'Emby 媒体工具',
+    visible: true,
+    type: 'group',
+    items: [
       'EmbyItemQueryView', 
       'TmdbReverseLookupView', 
       'TmdbIdSearchView',
@@ -110,23 +122,21 @@ export const defaultLayout: MenuGroup[] = [
     items: ['TmdbLabView', 'BangumiLabView', 'AILabView', 'ActorLabView']
   },
   {
-    key: 'group-others',
-    label: '其他工具',
+    key: 'group-system',
+    label: '系统与容器',
     visible: true,
     type: 'group',
-    items: ['TerminalManagerView', 'BookmarkManagerView', 'DockerManagerView', 'ImageBuilderView', 'PostgresManagerView', 'BackupManagerView']
+    items: ['TerminalManagerView', 'DockerManagerView', 'ImageBuilderView', 'PostgresManagerView', 'BackupManagerView']
   },
   {
     key: 'group-config',
-    label: '配置中心',
+    label: '配置与控制',
     visible: true,
     type: 'group',
     items: [
       'WebhookReceiverView', 
       'NotificationManagerView', 
       'AccountManagerView', 
-      'EmbyUsersView',
-      'EmbyLibrariesView',
       'ExternalControlView'
     ]
   }

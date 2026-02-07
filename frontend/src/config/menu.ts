@@ -24,10 +24,12 @@ import {
   NotificationsOutlined as NotificationIcon,
   AdminPanelSettingsOutlined as SecurityIcon,
   PersonOutlined as ProfileIcon,
-  BarChartOutlined as ChartIcon
+  BarChartOutlined as ChartIcon,
+  DnsOutlined as EmbyIcon,
+  AssignmentOutlined as AssignmentIcon
 } from '@vicons/material'
 
-// 自定义 Docker 图标组件
+// 自定义 Docker 图标
 export const DockerIcon = {
   render() {
     return h('svg', { viewBox: '0 0 24 24', fill: 'currentColor' }, [
@@ -40,67 +42,112 @@ function renderIcon(icon: Component) {
   return () => h(NIcon, null, { default: () => h(icon) })
 }
 
-// 原始扁平化菜单项定义（用于引用和基础数据）
-export const allMenuItems: MenuOption[] = [
-  { label: '管理仪表盘', key: 'DashboardView', icon: renderIcon(DashboardIcon) },
-  { label: '播放统计报表', key: 'PlaybackReportView', icon: renderIcon(ChartIcon) },
-  { label: '站点导航页', key: 'SiteNavView', icon: renderIcon(LensIcon) },
+// 原始基础项定义
+const rawItems = {
+  Dashboard: { label: '管理仪表盘', key: 'DashboardView', icon: renderIcon(DashboardIcon) },
+  SiteNav: { label: '站点导航页', key: 'SiteNavView', icon: renderIcon(LensIcon) },
   
-  { label: '重复项清理', key: 'DedupeView', icon: renderIcon(DedupeIcon) },
-  { label: '类型映射管理', key: 'TypeManagerView', icon: renderIcon(CategoryIcon) },
-  { label: '媒体净化清理', key: 'CleanupToolsView', icon: renderIcon(CleanupIcon) },
-  { label: '元数据锁定器', key: 'LockManagerView', icon: renderIcon(LockIcon) },
-  { label: '自动标签助手', key: 'AutoTagsView', icon: renderIcon(CategoryIcon) },
-  
-  { label: '项目元数据查询', key: 'EmbyItemQueryView', icon: renderIcon(SearchIcon) },
-  { label: '剧集 TMDB 反查', key: 'TmdbReverseLookupView', icon: renderIcon(TargetIcon) },
-  { label: 'TMDB ID 深度搜索', key: 'TmdbIdSearchView', icon: renderIcon(DeepSearchIcon) },
-  
-  { label: 'TMDB 实验中心', key: 'TmdbLabView', icon: renderIcon(LabIcon) },
-  { label: 'Bangumi 实验室', key: 'BangumiLabView', icon: renderIcon(LabIcon) },
-  { label: 'AI 实验室', key: 'AILabView', icon: renderIcon(LabIcon) },
-  { label: 'TMDB 演员实验室', key: 'ActorLabView', icon: renderIcon(ActorLabIcon) },
-  { label: '演员信息维护', key: 'ActorManagerView', icon: renderIcon(ActorIcon) },
-  
-  { label: '终端管理', key: 'TerminalManagerView', icon: renderIcon(ConsoleIcon) },
-  { label: 'Docker 容器管理', key: 'DockerManagerView', icon: renderIcon(DockerIcon) },
-  { label: '镜像构建与推送', key: 'ImageBuilderView', icon: renderIcon(BuildIcon) },
-  { label: 'PostgreSQL 管理', key: 'PostgresManagerView', icon: renderIcon(PostgresIcon) },
-  { label: '数据备份管理', key: 'BackupManagerView', icon: renderIcon(BackupIcon) },
-  
-  { label: 'Webhook 接收器', key: 'WebhookReceiverView', icon: renderIcon(WebhookIcon) },
-  { label: '通知消息中心', key: 'NotificationManagerView', icon: renderIcon(NotificationIcon) },
-  { label: '账号安全管理', key: 'AccountManagerView', icon: renderIcon(ProfileIcon) },
-  { label: 'Emby 用户管理', key: 'EmbyUsersView', icon: renderIcon(ActorIcon) },
-  { label: 'Emby 媒体库管理', key: 'EmbyLibrariesView', icon: renderIcon(PostgresIcon) },
-  { label: '外部控制体系', key: 'ExternalControlView', icon: renderIcon(SecurityIcon) },
+  PlaybackReport: { label: '播放统计报表', key: 'PlaybackReportView', icon: renderIcon(ChartIcon) },
+  EmbyUsers: { label: 'Emby 用户管理', key: 'EmbyUsersView', icon: renderIcon(ActorIcon) },
+  EmbyLibraries: { label: 'Emby 媒体库管理', key: 'EmbyLibrariesView', icon: renderIcon(PostgresIcon) },
+  EmbyTasks: { label: 'Emby 任务计划', key: 'EmbyScheduledTasksView', icon: renderIcon(AssignmentIcon) },
+
+  Dedupe: { label: '重复项清理', key: 'DedupeView', icon: renderIcon(DedupeIcon) },
+  TypeManager: { label: '类型映射管理', key: 'TypeManagerView', icon: renderIcon(CategoryIcon) },
+  Cleanup: { label: '媒体净化清理', key: 'CleanupToolsView', icon: renderIcon(CleanupIcon) },
+  MetadataLock: { label: '元数据锁定器', key: 'LockManagerView', icon: renderIcon(LockIcon) },
+  AutoTags: { label: '自动标签助手', key: 'AutoTagsView', icon: renderIcon(CategoryIcon) },
+  ActorManager: { label: '演员信息维护', key: 'ActorManagerView', icon: renderIcon(ActorIcon) },
+
+  ItemQuery: { label: '项目元数据查询', key: 'EmbyItemQueryView', icon: renderIcon(SearchIcon) },
+  TmdbLookup: { label: '剧集 TMDB 反查', key: 'TmdbReverseLookupView', icon: renderIcon(TargetIcon) },
+  TmdbSearch: { label: 'TMDB ID 深度搜索', key: 'TmdbIdSearchView', icon: renderIcon(DeepSearchIcon) },
+
+  TmdbLab: { label: 'TMDB 实验中心', key: 'TmdbLabView', icon: renderIcon(LabIcon) },
+  BangumiLab: { label: 'Bangumi 实验室', key: 'BangumiLabView', icon: renderIcon(LabIcon) },
+  AILab: { label: 'AI 实验室', key: 'AILabView', icon: renderIcon(LabIcon) },
+  ActorLab: { label: 'TMDB 演员实验室', key: 'ActorLabView', icon: renderIcon(ActorLabIcon) },
+
+  Terminal: { label: '终端管理', key: 'TerminalManagerView', icon: renderIcon(ConsoleIcon) },
+  Docker: { label: 'Docker 容器管理', key: 'DockerManagerView', icon: renderIcon(DockerIcon) },
+  ImageBuilder: { label: '镜像构建与推送', key: 'ImageBuilderView', icon: renderIcon(BuildIcon) },
+  Postgres: { label: 'PostgreSQL 管理', key: 'PostgresManagerView', icon: renderIcon(PostgresIcon) },
+  Backup: { label: '数据备份管理', key: 'BackupManagerView', icon: renderIcon(BackupIcon) },
+
+  Webhook: { label: 'Webhook 接收器', key: 'WebhookReceiverView', icon: renderIcon(WebhookIcon) },
+  Notification: { label: '通知消息中心', key: 'NotificationManagerView', icon: renderIcon(NotificationIcon) },
+  Account: { label: '账号安全管理', key: 'AccountManagerView', icon: renderIcon(ProfileIcon) },
+  ExternalControl: { label: '外部控制体系', key: 'ExternalControlView', icon: renderIcon(SecurityIcon) },
+}
+
+// 统一的 Emby 服务管理节点
+const EmbyManagementNode = {
+  label: 'Emby 运维管理',
+  key: 'emby-management',
+  icon: renderIcon(EmbyIcon),
+  children: [
+    rawItems.PlaybackReport,
+    rawItems.EmbyUsers,
+    rawItems.EmbyLibraries,
+    rawItems.EmbyTasks
+  ]
+}
+
+// 导出所有项的扁平化版本（用于兼容）
+export const allMenuItems: MenuOption[] = Object.values(rawItems)
+
+// 导出系统默认菜单（带层级）
+export const menuOptions: MenuOption[] = [
+  rawItems.Dashboard,
+  rawItems.SiteNav,
+  EmbyManagementNode,
+  rawItems.Dedupe,
+  rawItems.TypeManager,
+  rawItems.Cleanup,
+  rawItems.MetadataLock,
+  rawItems.AutoTags,
+  rawItems.ItemQuery,
+  rawItems.TmdbLookup,
+  rawItems.TmdbSearch,
+  rawItems.Terminal,
+  rawItems.Docker,
+  rawItems.ImageBuilder,
+  rawItems.Postgres,
+  rawItems.Backup,
+  rawItems.Webhook,
+  rawItems.Notification,
+  rawItems.Account,
+  rawItems.ExternalControl
 ]
 
-// 保持对原有 menuOptions 的兼容（为了不破坏现有的 store 逻辑）
-export const menuOptions = allMenuItems
-
-// 侧边栏分组定义
+// 导出分组菜单（侧边栏最常用的模式）
 export const groupedMenuOptions = [
   {
     type: 'group',
-    label: '概览控制',
+    label: '核心概览',
     key: 'group-overview',
     children: [
-      allMenuItems.find(i => i.key === 'DashboardView'),
-      allMenuItems.find(i => i.key === 'SiteNavView'),
+      rawItems.Dashboard,
+      rawItems.SiteNav,
     ]
+  },
+  {
+    type: 'group',
+    label: 'Emby 服务',
+    key: 'group-emby',
+    children: [ EmbyManagementNode ]
   },
   {
     type: 'group',
     label: '媒体工具',
     key: 'group-media',
     children: [
-      allMenuItems.find(i => i.key === 'DedupeView'),
-      allMenuItems.find(i => i.key === 'TypeManagerView'),
-      allMenuItems.find(i => i.key === 'CleanupToolsView'),
-      allMenuItems.find(i => i.key === 'LockManagerView'),
-      allMenuItems.find(i => i.key === 'AutoTagsView'),
-      allMenuItems.find(i => i.key === 'ActorManagerView'),
+      rawItems.Dedupe,
+      rawItems.TypeManager,
+      rawItems.Cleanup,
+      rawItems.MetadataLock,
+      rawItems.AutoTags,
+      rawItems.ActorManager,
     ]
   },
   {
@@ -108,10 +155,9 @@ export const groupedMenuOptions = [
     label: '查询探索',
     key: 'group-search',
     children: [
-      allMenuItems.find(i => i.key === 'PlaybackReportView'),
-      allMenuItems.find(i => i.key === 'EmbyItemQueryView'),
-      allMenuItems.find(i => i.key === 'TmdbReverseLookupView'),
-      allMenuItems.find(i => i.key === 'TmdbIdSearchView'),
+      rawItems.ItemQuery,
+      rawItems.TmdbLookup,
+      rawItems.TmdbSearch,
     ]
   },
   {
@@ -119,10 +165,10 @@ export const groupedMenuOptions = [
     label: '实验室',
     key: 'group-labs',
     children: [
-      allMenuItems.find(i => i.key === 'TmdbLabView'),
-      allMenuItems.find(i => i.key === 'BangumiLabView'),
-      allMenuItems.find(i => i.key === 'AILabView'),
-      allMenuItems.find(i => i.key === 'ActorLabView'),
+      rawItems.TmdbLab,
+      rawItems.BangumiLab,
+      rawItems.AILab,
+      rawItems.ActorLab,
     ]
   },
   {
@@ -130,11 +176,11 @@ export const groupedMenuOptions = [
     label: '系统维护',
     key: 'group-system',
     children: [
-      allMenuItems.find(i => i.key === 'TerminalManagerView'),
-      allMenuItems.find(i => i.key === 'DockerManagerView'),
-      allMenuItems.find(i => i.key === 'ImageBuilderView'),
-      allMenuItems.find(i => i.key === 'PostgresManagerView'),
-      allMenuItems.find(i => i.key === 'BackupManagerView'),
+      rawItems.Terminal,
+      rawItems.Docker,
+      rawItems.ImageBuilder,
+      rawItems.Postgres,
+      rawItems.Backup,
     ]
   },
   {
@@ -142,12 +188,10 @@ export const groupedMenuOptions = [
     label: '配置中心',
     key: 'group-config',
     children: [
-      allMenuItems.find(i => i.key === 'WebhookReceiverView'),
-      allMenuItems.find(i => i.key === 'NotificationManagerView'),
-      allMenuItems.find(i => i.key === 'AccountManagerView'),
-      allMenuItems.find(i => i.key === 'EmbyUsersView'),
-      allMenuItems.find(i => i.key === 'EmbyLibrariesView'),
-      allMenuItems.find(i => i.key === 'ExternalControlView'),
+      rawItems.Webhook,
+      rawItems.Notification,
+      rawItems.Account,
+      rawItems.ExternalControl,
     ]
   }
 ]

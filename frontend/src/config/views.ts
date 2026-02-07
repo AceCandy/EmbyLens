@@ -27,6 +27,7 @@ export const viewMap: Record<string, any> = {
   AccountManagerView: defineAsyncComponent(() => import('../views/toolkit/AccountManager.vue')),
   EmbyUsersView: defineAsyncComponent(() => import('../views/EmbyUsers.vue')),
   EmbyLibrariesView: defineAsyncComponent(() => import('../views/EmbyLibraries.vue')),
+  EmbyScheduledTasksView: defineAsyncComponent(() => import('../views/toolkit/emby-tasks/EmbyScheduledTasks.vue')),
   PlaybackReportView: defineAsyncComponent(() => import('../views/toolkit/playback-report/PlaybackReport.vue')),
   SiteNavView: defineAsyncComponent(() => import('../views/toolkit/sitenav/SiteNav.vue'))
 }
