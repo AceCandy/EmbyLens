@@ -70,7 +70,7 @@ class DockerService:
                 ssh_port = self.host_config.get("ssh_port", 22)
                 # 使用 timeout 避免卡死
                 base_url = f"ssh://{ssh_user}@{ssh_host}:{ssh_port}"
-                client = docker.DockerClient(base_url=base_url, use_ssh_client=False, timeout=10)
+                client = docker.DockerClient(base_url=base_url, use_ssh_client=False, timeout=60)
             
             elif host_type == "tcp":
                 host = self.host_config.get("ssh_host")
@@ -78,7 +78,7 @@ class DockerService:
                 use_tls = self.host_config.get("use_tls", False)
                 protocol = "https" if use_tls else "http"
                 base_url = f"{protocol}://{host}:{port}"
-                client = docker.DockerClient(base_url=base_url, timeout=10)
+                client = docker.DockerClient(base_url=base_url, timeout=60)
             
             if client:
                 self._clients_cache[self.host_id] = (client, time.time())
@@ -659,7 +659,7 @@ class DockerService:
         except Exception:
             return False
 
-    def exec_command(self, command: str, cwd: Optional[str] = None, log_error: bool = True) -> Dict[str, Any]:
+    def exec_command(self, command: str, cwd: Optional[str] = None, log_error: bool = True, timeout: int = 60) -> Dict[str, Any]:
         """在远程或本地执行 shell 命令"""
         import subprocess
         full_cmd = f"cd {cwd} && {command}" if cwd else command
@@ -680,15 +680,18 @@ class DockerService:
 
         if self.host_config.get("type") == "local":
             try:
-                process = subprocess.run(full_cmd, shell=True, capture_output=True, text=True, timeout=30)
+                process = subprocess.run(full_cmd, shell=True, capture_output=True, text=True, timeout=timeout)
                 stdout = process.stdout
                 stderr = filter_noise(process.stderr)
                 
                 if process.returncode != 0 and log_error:
                     logger.error(f"Local Command Failed: {command} (Code: {process.returncode}, Err: {stderr})")
-                return {"success": process.returncode == 0, "stdout": stdout, "stderr": stderr}
+                return {"success": process.returncode == 0, "stdout": stdout, "stderr": stderr, "timeout": False}
+            except subprocess.TimeoutExpired:
+                if log_error: logger.warning(f"Local Command Timeout ({timeout}s): {command}")
+                return {"success": False, "stdout": "", "stderr": "Command Timeout", "timeout": True}
             except Exception as e:
-                return {"success": False, "stdout": "", "stderr": str(e)}
+                return {"success": False, "stdout": "", "stderr": str(e), "timeout": False}
         
         elif self.host_config.get("type") == "ssh":
             ssh = None
@@ -725,11 +728,11 @@ class DockerService:
                     self._ssh_clients_cache[self.host_id] = (ssh, time.time())
                 except Exception as e:
                     if log_error: logger.error(f"SSH Connection Error during exec: {e}")
-                    return {"success": False, "stdout": "", "stderr": str(e)}
+                    return {"success": False, "stdout": "", "stderr": str(e), "timeout": False}
 
             try:
                 # 增加 exec_command 的超时保护
-                stdin, stdout, stderr = ssh.exec_command(full_cmd, timeout=30)
+                stdin, stdout, stderr = ssh.exec_command(full_cmd, timeout=timeout)
                 
                 out = stdout.read().decode()
                 err = filter_noise(stderr.read().decode())
@@ -741,17 +744,20 @@ class DockerService:
                 return {
                     "success": exit_status == 0,
                     "stdout": out,
-                    "stderr": err
+                    "stderr": err,
+                    "timeout": False
                 }
             except Exception as e:
+                # 检查是否是超时
+                is_timeout = "timeout" in str(e).lower()
                 # 如果执行失败且是因为连接断开，则清理缓存
                 if self.host_id in self._ssh_clients_cache:
                     try: ssh.close()
                     except: pass
                     del self._ssh_clients_cache[self.host_id]
                 if log_error: logger.error(f"SSH Exec Error: {e}")
-                return {"success": False, "stdout": "", "stderr": str(e)}
-        return {"success": False, "stdout": "", "stderr": "Unsupported host type"}
+                return {"success": False, "stdout": "", "stderr": str(e), "timeout": is_timeout}
+        return {"success": False, "stdout": "", "stderr": "Unsupported host type", "timeout": False}
 
     def read_file(self, file_path: str) -> str:
         if self.host_config.get("type") == "local":

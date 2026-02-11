@@ -166,19 +166,68 @@ async def project_action(host_id: str, name: str, action: str = Body(..., embed=
     service = get_docker_service(host_id)
     if not path:
         raise HTTPException(status_code=400, detail="Path is required")
+    
     cmd_map = {
         "up": f"docker compose -f {path} up -d",
         "down": f"docker compose -f {path} down",
         "pull": f"docker compose -f {path} pull",
         "restart": f"docker compose -f {path} restart"
     }
-    # 在线程池执行
-    res = await asyncio.to_thread(service.exec_command, cmd_map[action], os.path.dirname(path))
     
+    # 为不同操作设置不同的超时时间
+    # up 和 pull 操作可能需要拉取镜像，耗时较长
+    timeout = 300 if action in ["up", "pull"] else 90
+    
+    # 在线程池执行
+    res = await asyncio.to_thread(service.exec_command, cmd_map[action], os.path.dirname(path), timeout=timeout)
+    
+    success = res["success"]
+    
+    # --- 状态回检逻辑 ---
+    # 如果执行结果不成功（或者是由于超时导致的“失败”），我们进行二次状态确认
+    if not success:
+        logger.info(f"🔍 [Compose] 操作 {action} 返回未成功 (超时={res.get('timeout')})，开始回检状态...")
+        
+        if action == "up":
+            # 检查项目中的容器是否已经在运行
+            check_cmd = f"docker compose -f {path} ps --format json"
+            check_res = await asyncio.to_thread(service.exec_command, check_cmd, os.path.dirname(path), timeout=30)
+            if check_res["success"] and check_res["stdout"].strip():
+                try:
+                    ps_data = json.loads(check_res["stdout"])
+                    # 如果是列表且不为空，或者是非空对象
+                    if ps_data:
+                        # 只要有容器处于 running 状态，我们就认为 up 成功了（即使之前的命令超时）
+                        is_running = any(c.get("State") == "running" or c.get("Status") == "running" for c in (ps_data if isinstance(ps_data, list) else [ps_data]))
+                        if is_running:
+                            logger.info(f"✨ [Compose] 回检发现容器已在运行，判定操作成功")
+                            success = True
+                except: pass
+        
+        elif action == "down":
+            # 检查项目中的容器是否已全部移除
+            check_cmd = f"docker compose -f {path} ps --format json"
+            check_res = await asyncio.to_thread(service.exec_command, check_cmd, os.path.dirname(path), timeout=30)
+            if check_res["success"]:
+                stdout = check_res["stdout"].strip()
+                # 如果输出为空或表示没有容器，则认为 down 成功
+                if not stdout or stdout == "[]":
+                    logger.info(f"✨ [Compose] 回检发现已无运行容器，判定操作成功")
+                    success = True
+        
+        elif action == "pull":
+            # pull 操作如果超时，很难简单验证，但通常镜像已经在后台下载中或已完成
+            # 如果没有明确报错（只是超时），我们可以暂时认为它在后台继续进行
+            if res.get("timeout"):
+                logger.info(f"ℹ️ [Compose] Pull 操作超时，但可能仍在后台下载，提示用户稍后刷新")
+                # 这种情况下我们仍然返回 False，但可以自定义更友好的错误详情
+                res["stderr"] = "操作耗时较长，镜像可能仍在后台下载中，请稍后刷新查看。"
+
     # 操作后清理缓存
     if host_id in DockerService._projects_cache:
         del DockerService._projects_cache[host_id]
-    return {"success": res["success"], "stdout": res["stdout"], "stderr": res["stderr"]}
+        
+    return {"success": success, "stdout": res["stdout"], "stderr": res["stderr"], "timeout": res.get("timeout", False)}
 
 @router.post("/{host_id}/projects/bulk-action")
 async def bulk_project_action(host_id: str, action: str = Body(..., embed=True)):

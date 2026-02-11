@@ -300,8 +300,8 @@ const message = useMessage()
 const upgrading = ref(false)
 
 const versionInfo = ref({
-        current: 'v2.4.4',
-        latest: 'v2.4.4',  hasUpdate: false
+        current: 'v2.4.5',
+        latest: 'v2.4.5',  hasUpdate: false
 })
 
 const handleUpgrade = async () => {
