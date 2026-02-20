@@ -279,32 +279,75 @@ class ImageBuilderService:
 
     @staticmethod
     async def setup_buildx_env(host_id: str, proxy_id: Optional[str] = None):
+        """一键初始化构建环境：安装 QEMU, 配置 Buildx 等 (异步后台任务)"""
         config = get_config()
         hosts = config.get("docker_hosts", [])
         host_config = next((h for h in hosts if h.get("id") == host_id), None)
-        if not host_config: return {"success": False, "message": "Host not found"}
-        service = DockerService(host_config)
-        logs = []
-        proxy_env = ""
-        if proxy_id:
-            proxy = await ImageBuilderService.get_proxy(None, proxy_id)
-            if proxy:
-                url = proxy["url"]
-                if proxy.get("username") and proxy.get("password"):
-                    parsed = urlparse(url)
-                    netloc = f"{proxy['username']}:{proxy['password']}@{parsed.netloc}"
-                    url = urlunparse(parsed._replace(netloc=netloc))
-                proxy_env = f"--driver-opt env.http_proxy={url} --driver-opt env.https_proxy={url} --driver-opt env.no_proxy=localhost,127.0.0.1"
-                logs.append(f"--- 绑定构建代理: {proxy['url']} ---")
-        logs.append("正在安装 QEMU 多架构仿真支持...")
-        service.exec_command("docker run --privileged --rm tonistiigi/binfmt --install all")
-        logs.append("正在清理并重建专用构建器 (lens-builder)...")
-        service.exec_command("docker buildx rm lens-builder")
-        create_cmd = f"docker buildx create --name lens-builder --driver docker-container --driver-opt network=host {proxy_env} --use"
-        res = service.exec_command(create_cmd)
-        logs.append(res["stdout"] + res["stderr"])
-        service.exec_command("docker buildx inspect --bootstrap")
-        return {"success": True, "logs": "\n".join(logs)}
+        if not host_config: 
+            return {"success": False, "message": "Host not found"}
+
+        # 定义后台执行任务
+        async def background_setup():
+            from app.services.notification_service import NotificationService
+            service = DockerService(host_config)
+            host_name = host_config.get('name', host_id)
+            
+            async def notify(msg: str):
+                logger.info(f"🛠️ [环境初始化] {msg} (主机: {host_name})")
+                await NotificationService.emit(
+                    event="image_builder.setup_progress",
+                    title="环境初始化进度",
+                    message=f"主机: {host_name}\n进度: {msg}"
+                )
+
+            try:
+                proxy_env = ""
+                if proxy_id:
+                    proxy = await ImageBuilderService.get_proxy(None, proxy_id)
+                    if proxy:
+                        url = proxy["url"]
+                        if proxy.get("username") and proxy.get("password"):
+                            parsed = urlparse(url)
+                            netloc = f"{proxy['username']}:{proxy['password']}@{parsed.netloc}"
+                            url = urlunparse(parsed._replace(netloc=netloc))
+                        proxy_env = f"--driver-opt env.http_proxy={url} --driver-opt env.https_proxy={url} --driver-opt env.no_proxy=localhost,127.0.0.1"
+                        await notify(f"已绑定构建代理: {proxy['url']}")
+
+                # 1. 安装 QEMU (耗时较长，多架构支持)
+                await notify("正在安装 QEMU 多架构仿真支持 (耗时较长)...")
+                await asyncio.to_thread(service.exec_command, "docker run --privileged --rm tonistiigi/binfmt --install all")
+
+                # 2. 清理旧构建器
+                await notify("正在清理旧构建器 (lens-builder)...")
+                await asyncio.to_thread(service.exec_command, "docker buildx rm lens-builder", log_error=False)
+
+                # 3. 创建新构建器 (并配置代理)
+                await notify("正在创建并配置专用构建器 (lens-builder)...")
+                create_cmd = f"docker buildx create --name lens-builder --driver docker-container --driver-opt network=host {proxy_env} --use"
+                res = await asyncio.to_thread(service.exec_command, create_cmd)
+                
+                # 4. 预热/引导
+                await notify("正在执行构建器预引导 (Bootstrap)...")
+                await asyncio.to_thread(service.exec_command, "docker buildx inspect --bootstrap")
+
+                await notify("✨ 环境初始化任务已成功完成！")
+                
+            except Exception as e:
+                logger.error(f"🚨 [环境初始化] 失败: {e}")
+                await NotificationService.emit(
+                    event="image_builder.setup_progress",
+                    title="环境初始化失败",
+                    message=f"主机: {host_name}\n原因: {str(e)}"
+                )
+
+        # 启动后台任务
+        asyncio.create_task(background_setup())
+        
+        return {
+            "success": True, 
+            "message": "初始化任务已在后台启动，请关注系统通知进度",
+            "async": True
+        }
 
     # --- Task Logic (DB) ---
     @staticmethod
@@ -392,8 +435,12 @@ class ImageBuilderService:
                 log_to_file(f"--- 正在远程登录仓库: {reg_url} ---")
                 login_cmd = f"echo \"{cred_dict['encrypted_password']}\" | docker login -u \"{cred_dict['username']}\" --password-stdin {reg_url}"
                 res = service.exec_command(login_cmd)
-                if not res["success"]: log_to_file(f"❌ 登录失败: {res['stderr']}")
-                else: log_to_file("--- 登录成功 ---")
+                if not res["success"]:
+                    error_msg = f"❌ 登录失败: {res['stderr']}"
+                    log_to_file(error_msg)
+                    raise Exception(f"Docker 登录失败，无法继续推送。请检查凭据或网络连接。\n详情: {res['stderr']}")
+                else:
+                    log_to_file("--- 登录成功 ---")
             build_args = []
             if proxy_dict:
                 url = proxy_dict['url']

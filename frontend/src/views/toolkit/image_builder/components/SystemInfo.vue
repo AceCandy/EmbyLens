@@ -162,10 +162,14 @@ const handleRepair = () => {
           proxy_id: selectedProxyId.value
         })
         if (res.data.success) {
-          message.success('构建环境初始化成功')
-          fetchInfo()
+          if (res.data.async) {
+            message.info(res.data.message || '环境初始化任务已在后台启动，请留意系统通知进度')
+          } else {
+            message.success('构建环境初始化成功')
+            fetchInfo()
+          }
         } else {
-          message.error('修复失败: ' + res.data.message)
+          message.error('初始化失败: ' + res.data.message)
         }
       } catch (e) {
         message.error('请求失败')
