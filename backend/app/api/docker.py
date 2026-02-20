@@ -208,7 +208,7 @@ async def container_action(host_id: str, container_id: str, action: str = Body(.
     logger.info(f"🚀 [Docker] 收到容器操作请求: 动作={action}, 容器ID={container_id}, 主机={host_id}")
     service = get_docker_service(host_id)
     
-    # 尝试获取容器名称，用于通知 (异步化)
+    # 尝试获取容器名称，用于通知
     container_name = container_id
     try:
         if service.client:
@@ -218,7 +218,47 @@ async def container_action(host_id: str, container_id: str, action: str = Body(.
     except Exception:
         pass
 
-    # 在线程池中执行耗时操作
+    # 操作名称中文化
+    action_map = {
+        "start": "启动 (Start)",
+        "stop": "停止 (Stop)",
+        "restart": "重启 (Restart)",
+        "remove": "删除 (Remove)",
+        "recreate": "重构/更新 (Recreate)"
+    }
+    display_action = action_map.get(action, action)
+
+    # 对于耗时操作（recreate/update），采用后台任务模式，防止前端超时
+    if action in ["recreate", "update"]:
+        async def run_recreate_task():
+            try:
+                # 记录审计日志
+                audit_log(f"Docker Async Action: {action}", 0, [f"Host: {host_id}", f"Container: {container_name}"])
+                
+                # 执行操作
+                success = await asyncio.to_thread(service.container_action, container_id, action)
+                
+                status_text = "成功" if success else "失败"
+                logger.info(f"🏁 [Docker] 异步操作 {action} 执行完成: {status_text}")
+                
+                # 执行完成后的通知
+                await NotificationService.emit(
+                    event="docker.container_action",
+                    title="Docker 容器更新结果",
+                    message=f"主机: {host_id}\n容器: {container_name}\n操作: {display_action}\n结果: {status_text}"
+                )
+            except Exception as e:
+                logger.error(f"🚨 [Docker] 异步重构任务崩溃: {e}")
+                await NotificationService.emit(
+                    event="docker.container_action",
+                    title="Docker 容器更新异常",
+                    message=f"主机: {host_id}\n容器: {container_name}\n错误: {str(e)}"
+                )
+
+        asyncio.create_task(run_recreate_task())
+        return {"message": f"容器 {display_action} 任务已在后台启动，请留意系统通知", "async": True}
+
+    # 普通操作依然同步等待
     success = await asyncio.to_thread(service.container_action, container_id, action)
     
     if not success:
@@ -229,24 +269,10 @@ async def container_action(host_id: str, container_id: str, action: str = Body(.
     logger.info(f"✅ [Docker] 容器操作成功: {action} (耗时 {process_time:.1f}ms)")
     
     # 发送通知
-    config = get_config()
-    hosts = config.get("docker_hosts", [])
-    host_name = next((h.get("name") for h in hosts if h.get("id") == host_id), "Unknown Host")
-    
-    # 操作名称中文化
-    action_map = {
-        "start": "启动 (Start)",
-        "stop": "停止 (Stop)",
-        "restart": "重启 (Restart)",
-        "remove": "删除 (Remove)",
-        "recreate": "重构 (Recreate)"
-    }
-    display_action = action_map.get(action, action)
-
     asyncio.create_task(NotificationService.emit(
         event="docker.container_action",
         title="Docker 容器操作提醒",
-        message=f"主机: {host_name}\n容器名称: {container_name}\n容器 ID: {container_id[:12]}\n操作: {display_action}\n结果: 成功"
+        message=f"容器: {container_name}\n操作: {display_action}\n结果: 成功"
     ))
 
     audit_log(f"Docker Action: {action}", process_time, [

@@ -197,11 +197,16 @@ onUnmounted(() => {
 const handleAction = async (id: string, action: string) => {
   loadingActions.value[id] = true
   try {
-    await axios.post(`/api/docker/${props.hostId}/containers/${id}/action`, { action })
-    message.success('指令已发送')
+    const res = await axios.post(`/api/docker/${props.hostId}/containers/${id}/action`, { action })
+    if (res.data.async) {
+      message.info(res.data.message || '任务已在后台启动，请留意系统通知')
+    } else {
+      message.success('指令已执行')
+    }
     setTimeout(() => fetchContainers(true), 2000)
-  } catch (e) {
-    message.error('操作失败')
+  } catch (e: any) {
+    const errorMsg = e.response?.data?.detail || e.message || '操作失败'
+    message.error(`操作失败: ${errorMsg}`)
   } finally {
     loadingActions.value[id] = false
   }
