@@ -41,7 +41,7 @@
             </div>
           </div>
           
-          <div class="item-name">{{ item.label }}</div>
+          <div class="item-name" :title="item.label">{{ item.label }}</div>
         </div>
       </div>
     </div>
@@ -146,9 +146,10 @@ const sections = computed(() => [
 .rating-val { color: #f0a020; text-shadow: 0 0 5px rgba(240, 160, 32, 0.5); }
 
 .item-name {
-  margin-top: 20px; font-size: 15px; font-weight: bold; color: #fff;
+  margin-top: 15px; font-size: 14px; font-weight: 800; color: #fff;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   padding: 0 5px; text-align: center;
+  width: 160px; margin: 15px auto 0 auto;
 }
 
 /* 动画 */

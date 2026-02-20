@@ -9,13 +9,13 @@
           <n-avatar
             round
             :size="user.rank === 1 ? 90 : 70"
-            :src="user.avatar"
+            :src="getUserAvatar(user)"
             fallback-src="/favicon.svg"
             class="user-avatar"
           />
           <div class="rank-badge">{{ user.rank }}</div>
         </div>
-        <div class="user-name">{{ user.label }}</div>
+        <div class="user-name" :title="user.label">{{ user.label }}</div>
         <div class="user-stats">
           <span class="count">{{ user.count }}次</span>
           <span class="divider">/</span>
@@ -42,12 +42,12 @@
         <n-avatar
           round
           size="medium"
-          :src="user.avatar"
+          :src="getUserAvatar(user)"
           fallback-src="/favicon.svg"
         />
         <div class="main-info">
           <div class="name-line">
-            <span class="name">{{ user.label }}</span>
+            <span class="name" :title="user.label">{{ user.label }}</span>
             <div class="mini-badges">
               <span v-for="badge in user.badges" :key="badge.text" :style="{ color: badge.color }">
                 <n-icon><component :is="markRaw(badge.icon)" /></n-icon>
@@ -97,6 +97,32 @@ const podiumUsers = computed(() => {
 })
 
 const listUsers = computed(() => props.users.slice(3, 10))
+
+const getUserAvatar = (user: any) => {
+  if (user.avatar && user.avatar !== 'null' && user.avatar !== 'undefined') {
+    return user.avatar
+  }
+  
+  const rank = user.rank
+  const colorMap: Record<number, string> = {
+    1: '#f0a020', // 金
+    2: '#c0c0c0', // 银
+    3: '#b87333'  // 铜
+  }
+  
+  const mainColor = colorMap[rank] || '#444' // 其他默认深灰
+  const iconColor = (rank >= 1 && rank <= 3) ? '#ffffff' : '#888'
+  
+  // 生成一个简单的 SVG 默认头像 (Base64)
+  const svg = `
+    <svg viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="64" cy="64" r="64" fill="${mainColor}"/>
+      <path d="M64 30c11 0 20 9 20 20s-9 20-20 20-20-9-20-20 9-20 20-20zm0 45c20 0 38 12 44 30H20c6-18 24-30 44-30z" fill="${iconColor}"/>
+    </svg>
+  `.trim()
+  
+  return `data:image/svg+xml;base64,${btoa(svg)}`
+}
 
 const formatDuration = (seconds: number) => {
   const s = Number(seconds) || 0
@@ -264,8 +290,15 @@ const getRankColor = (rank: number) => {
   display: flex;
   align-items: center;
   gap: 8px;
+  min-width: 0;
 }
-.name-line .name { font-weight: bold; font-size: 14px; color: var(--text-color); }
+.name-line .name { 
+  font-weight: bold; font-size: 14px; color: var(--text-color); 
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 1;
+}
 .mini-badges { display: flex; gap: 4px; font-size: 12px; }
 
 .progress-track {

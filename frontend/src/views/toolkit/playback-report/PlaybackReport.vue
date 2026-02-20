@@ -57,7 +57,7 @@
                     />
                   </div>
                   <div class="activity-info">
-                    <div class="name-text">{{ activity.label }}</div>
+                    <div class="name-text" :title="activity.label">{{ activity.label }}</div>
                     <n-space :size="8" align="center">
                       <n-icon size="14" color="var(--primary-color)"><PeopleOutlined /></n-icon>
                       <n-text depth="2" style="font-size: 12px">{{ activity.user_name || activity.UserName }}</n-text>
