@@ -1,5 +1,5 @@
-import axios from 'axios'
+import request from '@/utils/request'
 
 export const actorLabApi = {
-  analyze: (params: any) => axios.get('/api/actor-lab/analyze', { params })
+  analyze: (params: any) => request.get('/api/actor-lab/analyze', { params })
 }
