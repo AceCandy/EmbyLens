@@ -175,7 +175,7 @@ async def list_duplicates(db: AsyncSession = Depends(get_db)):
 
 @router.post("/smart-select")
 async def smart_select_v4(db: AsyncSession = Depends(get_db)):
-    """智能分析评分引擎 (V4): 深度日志跟踪与服务器隔离"""
+    """智能分析评分引擎 (V4): 深度日志跟踪与内容完整性保护"""
     start_time = time.time()
     active_server_id = get_config().get("active_server_id")
     config = get_config()
@@ -188,8 +188,14 @@ async def smart_select_v4(db: AsyncSession = Depends(get_db)):
     all_items_res = await db.execute(select(MediaItem).where(MediaItem.server_id == active_server_id, MediaItem.item_type.in_(["Movie", "Series", "Episode"])))
     all_items = all_items_res.scalars().all()
     
-    logger.info(f"┣ 📊 库内共有 {len(all_items)} 个节点参与评分")
-    
+    # 建立父子关系索引，用于分析 Series 的完整性
+    series_episode_map = defaultdict(set)
+    for i in all_items:
+        if i.item_type == "Episode" and i.parent_id:
+            # 记录剧集 ID 下拥有的单集编号 (SxxExx)
+            key = f"S{str(i.season_num or 0).zfill(2)}E{str(i.episode_num or 0).zfill(2)}"
+            series_episode_map[i.parent_id].add(key)
+
     groups = defaultdict(list)
     for i in all_items:
         if not i.tmdb_id: continue
@@ -205,6 +211,25 @@ async def smart_select_v4(db: AsyncSession = Depends(get_db)):
     for key, g_items in groups.items():
         if len(g_items) > 1:
             duplicate_group_count += 1
+            
+            # 特殊处理剧集 (Series): 检查内容是否互补
+            if key.startswith("Series-"):
+                # 如果剧集文件夹包含的集数不完全一致，则视为“互补”或“非镜像”，不自动建议删除
+                ep_sets = [series_episode_map.get(i.id, set()) for i in g_items]
+                is_complementary = False
+                for idx, s1 in enumerate(ep_sets):
+                    for jdx, s2 in enumerate(ep_sets):
+                        if idx == jdx: continue
+                        # 如果 A 有 B 没有的集数，且 B 也有 A 没有的集数，则为互补
+                        if (s1 - s2) and (s2 - s1):
+                            is_complementary = True
+                            break
+                    if is_complementary: break
+                
+                if is_complementary:
+                    logger.info(f"┃  🛡️ [剧集保护] 组 [{key}] 为互补内容（各文件夹包含不同集数），跳过自动删除建议")
+                    continue
+
             scored_data = [{"id": i.id, "emby_id": i.id, "path": i.path, "display_title": i.display_title, "video_codec": i.video_codec, "video_range": i.video_range} for i in g_items]
             suggested = scorer.select_best(scored_data)
             
@@ -234,45 +259,97 @@ async def smart_select_v4(db: AsyncSession = Depends(get_db)):
 
 @router.delete("/items")
 async def delete_items_optimized(request: BulkDeleteRequest, db: AsyncSession = Depends(get_db)):
-    """优化版隔离删除：支持冗余折叠与审计"""
+    """优化版隔离删除：支持冗余折叠、路径白名单保护与剧集内容降级清理"""
     start_time = time.time()
     active_server_id = get_config().get("active_server_id")
+    config = get_config()
+    exclude_paths = config.get("exclude_paths", []) # 加载白名单
     service = get_emby_service()
     if not service: raise HTTPException(status_code=400, detail="未配置服务器")
     
+    # 1. 加载所有待删条目信息
     res = await db.execute(select(MediaItem).where(MediaItem.server_id == active_server_id, MediaItem.id.in_(request.item_ids)))
     delete_map = {item.id: item for item in res.scalars().all()}
     
+    # 2. 预检与拦截
     final_ids_to_call = []
+    actual_deleted_ids = [] # 真正需要从数据库移除的 ID
     skipped_count = 0
+    downgrade_count = 0
+    protected_count = 0
+    
+    # 提前获取全库单集索引，用于剧集保护
+    all_episodes_res = await db.execute(select(MediaItem.tmdb_id, MediaItem.season_num, MediaItem.episode_num, MediaItem.id).where(MediaItem.server_id == active_server_id, MediaItem.item_type == "Episode"))
+    ep_registry = defaultdict(list)
+    for tmdb_id, s_num, e_num, eid in all_episodes_res.all():
+        if tmdb_id: ep_registry[f"{tmdb_id}-S{s_num}E{e_num}"].append(eid)
+
     for eid in request.item_ids:
         item = delete_map.get(eid)
         if not item: continue
         
-        # 折叠逻辑：如果其 parent_id 也在本次删除名单中，则跳过该子项的 API 调用
+        # --- 路径白名单绝对保护 ---
+        if any(ex.lower() in item.path.lower() for ex in exclude_paths if ex.strip()):
+            logger.error(f"🛡️ [绝对拦截] 尝试删除受白名单保护的路径: {item.path}。操作已拒绝。")
+            protected_count += 1
+            continue
+            
+        # 冗余折叠
         if item.parent_id in request.item_ids:
-            logger.info(f"⚡ [优化] 跳过子项 API 调用 (父级已在清理列表): {item.path}")
+            # 检查父级是否也被保护了，如果父级被保护了，子级不能直接跳过，也得进入保护逻辑（这里由于是递归删除，通常父级保护了子级就安全）
             skipped_count += 1
-        else:
-            final_ids_to_call.append(eid)
+            actual_deleted_ids.append(eid)
+            continue
+            
+        # 剧集安全校验
+        if item.item_type == "Series":
+            children_res = await db.execute(select(MediaItem).where(MediaItem.parent_id == item.id, MediaItem.item_type == "Episode"))
+            children = children_res.scalars().all()
+            
+            unsafe_episodes = []
+            for child in children:
+                key = f"{child.tmdb_id}-S{child.season_num}E{child.episode_num}"
+                others = [oid for oid in ep_registry.get(key, []) if oid != child.id and oid not in request.item_ids]
+                if not others: unsafe_episodes.append(child)
+            
+            if unsafe_episodes:
+                logger.warning(f"🛡️ [安全拦截] 剧集文件夹 {item.path} 包含唯一集数，拦截并降级。")
+                downgrade_count += 1
+                for child in children:
+                    # 即使降级，也要检查子项是否在白名单中
+                    if any(ex.lower() in child.path.lower() for ex in exclude_paths if ex.strip()): continue
+                    
+                    key = f"{child.tmdb_id}-S{child.season_num}E{child.episode_num}"
+                    if any(oid for oid in ep_registry.get(key, []) if oid != child.id and oid not in request.item_ids):
+                        final_ids_to_call.append(child.id)
+                        actual_deleted_ids.append(child.id)
+                continue 
 
+        final_ids_to_call.append(eid)
+        actual_deleted_ids.append(eid)
+
+    # 3. 执行物理删除
     success = 0
     for eid in final_ids_to_call:
         item = delete_map.get(eid)
-        logger.warning(f"🔥 [清理] 执行 Emby 物理删除: {item.path if item else eid}")
+        if not item: continue
+        logger.warning(f"🔥 [清理] 执行 Emby 物理删除: {item.path}")
         if await service.delete_item(eid):
             success += 1
     
-    await db.execute(delete(MediaItem).where(MediaItem.server_id == active_server_id, MediaItem.id.in_(request.item_ids)))
-    await db.commit()
+    # 4. 同步更新数据库 (仅移除真正被删除或需要清理的 ID)
+    if actual_deleted_ids:
+        await db.execute(delete(MediaItem).where(MediaItem.server_id == active_server_id, MediaItem.id.in_(actual_deleted_ids)))
+        await db.commit()
     
     process_time = (time.time() - start_time) * 1000
-    audit_log("媒体清理隔离任务完成", process_time, [
+    audit_log("媒体清理任务完成 (全重保护模式)", process_time, [
         f"API物理删除: {success}",
-        f"逻辑折叠跳过: {skipped_count}",
-        f"本地库清理: {len(request.item_ids)}"
+        f"路径白名单拦截: {protected_count}",
+        f"安全拦截降级: {downgrade_count}",
+        f"逻辑折叠跳过: {skipped_count}"
     ])
-    return {"success": success, "skipped": skipped_count}
+    return {"success": success, "protected": protected_count, "downgraded": downgrade_count}
 
 @router.get("/config")
 async def get_dedupe_config():
