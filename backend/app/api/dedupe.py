@@ -175,7 +175,7 @@ async def list_duplicates(db: AsyncSession = Depends(get_db)):
 
 @router.post("/smart-select")
 async def smart_select_v4(db: AsyncSession = Depends(get_db)):
-    """智能分析评分引擎 (V4): 深度日志跟踪与内容完整性保护"""
+    """智能分析评分引擎 (V4): 深度层级分析与空壳清理"""
     start_time = time.time()
     active_server_id = get_config().get("active_server_id")
     config = get_config()
@@ -185,17 +185,32 @@ async def smart_select_v4(db: AsyncSession = Depends(get_db)):
     
     logger.info(f"🧪 [智能分析] 评分引擎启动 (Server: {active_server_id})...")
     
-    all_items_res = await db.execute(select(MediaItem).where(MediaItem.server_id == active_server_id, MediaItem.item_type.in_(["Movie", "Series", "Episode"])))
+    # 加载全量媒体，包含 Season 用于层级分析
+    all_items_res = await db.execute(select(MediaItem).where(MediaItem.server_id == active_server_id, MediaItem.item_type.in_(["Movie", "Series", "Season", "Episode"])))
     all_items = all_items_res.scalars().all()
+    item_by_id = {i.id: i for i in all_items}
     
-    # 建立父子关系索引，用于分析 Series 的完整性
-    series_episode_map = defaultdict(set)
+    # 1. 构建层级溯源索引 (找出每个 Episode 最终属于哪个 Series)
+    item_to_series = {}
     for i in all_items:
-        if i.item_type == "Episode" and i.parent_id:
-            # 记录剧集 ID 下拥有的单集编号 (SxxExx)
-            key = f"S{str(i.season_num or 0).zfill(2)}E{str(i.episode_num or 0).zfill(2)}"
-            series_episode_map[i.parent_id].add(key)
+        if i.item_type == "Series": item_to_series[i.id] = i.id
+    
+    # 向上追溯 2 层 (Episode -> Season -> Series)
+    for _ in range(2):
+        for i in all_items:
+            if i.parent_id in item_to_series:
+                item_to_series[i.id] = item_to_series[i.parent_id]
 
+    # 2. 统计每个 Series 下的内容集合
+    series_content = defaultdict(set)
+    for i in all_items:
+        if i.item_type == "Episode":
+            s_id = item_to_series.get(i.id)
+            if s_id:
+                key = f"S{str(i.season_num or 0).zfill(2)}E{str(i.episode_num or 0).zfill(2)}"
+                series_content[s_id].add(key)
+
+    # 3. 分组并应用评分规则
     groups = defaultdict(list)
     for i in all_items:
         if not i.tmdb_id: continue
@@ -212,40 +227,53 @@ async def smart_select_v4(db: AsyncSession = Depends(get_db)):
         if len(g_items) > 1:
             duplicate_group_count += 1
             
-            # 特殊处理剧集 (Series): 检查内容是否互补
+            # 剧集特殊逻辑：内容完整性对比
             if key.startswith("Series-"):
-                # 如果剧集文件夹包含的集数不完全一致，则视为“互补”或“非镜像”，不自动建议删除
-                ep_sets = [series_episode_map.get(i.id, set()) for i in g_items]
+                valid_candidates = []
+                for i in g_items:
+                    # 检查是否为空壳
+                    if not series_content.get(i.id):
+                        logger.info(f"┃  🗑️ [空壳清理] 发现空剧集文件夹: {i.path}，建议清理")
+                        to_delete_ids.append(i.id)
+                        continue
+                    valid_candidates.append(i)
+                
+                if len(valid_candidates) <= 1: continue
+
+                # 检查互补性
                 is_complementary = False
-                for idx, s1 in enumerate(ep_sets):
-                    for jdx, s2 in enumerate(ep_sets):
+                for idx, item1 in enumerate(valid_candidates):
+                    s1 = series_content.get(item1.id, set())
+                    for jdx, item2 in enumerate(valid_candidates):
                         if idx == jdx: continue
-                        # 如果 A 有 B 没有的集数，且 B 也有 A 没有的集数，则为互补
+                        s2 = series_content.get(item2.id, set())
+                        # 互补判定：两者各拥有对方没有的集数
                         if (s1 - s2) and (s2 - s1):
                             is_complementary = True
                             break
                     if is_complementary: break
                 
                 if is_complementary:
-                    logger.info(f"┃  🛡️ [剧集保护] 组 [{key}] 为互补内容（各文件夹包含不同集数），跳过自动删除建议")
+                    logger.info(f"┃  🛡️ [剧集保护] 组 [{key}] 存在互补内容，跳过整个文件夹的自动删除，降级到单集去重")
                     continue
+                
+                # 如果不是互补（即：存在包含关系或完全一致），则对 Series 文件夹进行评分去重
+                g_items = valid_candidates
 
             scored_data = [{"id": i.id, "emby_id": i.id, "path": i.path, "display_title": i.display_title, "video_codec": i.video_codec, "video_range": i.video_range} for i in g_items]
             suggested = scorer.select_best(scored_data)
             
-            logger.info(f"┃  ┣ 📦 重复组 [{key}] 有 {len(g_items)} 个副本")
             for i in g_items:
                 status = "🗑️ 建议删除" if i.id in suggested else "✅ 建议保留"
-                # 改为包含匹配 (只要路径包含关键词即排除)，且忽略大小写
                 if i.id in suggested and any(ex.lower() in i.path.lower() for ex in exclude_paths if ex.strip()):
                     status = "🛡️ 白名单保护"
                     suggested.remove(i.id)
-                logger.info(f"┃  ┃  ┗ {status}: [{i.display_title} | {i.video_codec}] {i.path}")
+                logger.info(f"┃  ┣ {status}: [{i.item_type}] {i.path}")
             
             to_delete_ids.extend(suggested)
     
     process_time = (time.time() - start_time) * 1000
-    logger.info(f"✅ [智能分析] 任务结束: 扫描全库发现 {duplicate_group_count} 组重复，建议删除 {len(to_delete_ids)} 个节点。")
+    logger.info(f"✅ [智能分析] 完成: 发现 {duplicate_group_count} 组重复，建议清理 {len(to_delete_ids)} 个节点。")
     
     audit_log("智能分析引擎执行完毕", process_time, [
         f"分析总数: {len(all_items)}",
