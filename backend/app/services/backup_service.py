@@ -134,6 +134,8 @@ class BackupService:
             os.makedirs(dst_dir, exist_ok=True)
             
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            # 提前定义 base_name，防止 UnboundLocalError
+            base_name = os.path.basename(src.rstrip("/")) if src else "backup"
 
             if mode == "pgsql":
                 # --- PostgreSQL 备份逻辑 ---
