@@ -1,9 +1,9 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, delete, or_
 from pydantic import BaseModel
 from typing import List, Dict, Any, Optional
-from app.db.session import get_db
+from app.db.session import get_db, AsyncSessionLocal
 from app.models.media import MediaItem
 from app.services.emby import EmbyService, get_emby_service
 from app.core.scorer import Scorer
@@ -33,107 +33,133 @@ def parse_advanced_search(text: str):
 class BulkDeleteRequest(BaseModel):
     item_ids: List[str]
 
-# --- 接口实现 ---
+# --- 状态跟踪 ---
+sync_status = {"is_syncing": False, "progress": "", "last_run": None}
+
+@router.get("/sync/status")
+async def get_sync_status():
+    """获取当前同步状态"""
+    return sync_status
 
 @router.post("/sync")
-async def sync_media(db: AsyncSession = Depends(get_db)):
-    """同步 Emby 媒体数据，支持 10 并发并行拉取，支持多服务器隔离"""
+async def sync_media_trigger(background_tasks: BackgroundTasks):
+    """异步触发同步任务，避免 HTTP 超时"""
+    if sync_status["is_syncing"]:
+        return {"message": "syncing"}
+    
+    background_tasks.add_task(run_sync_task)
+    return {"message": "sync_started"}
+
+async def run_sync_task():
+    """后台同步任务核心逻辑"""
+    sync_status["is_syncing"] = True
+    sync_status["progress"] = "正在初始化..."
     start_time = time.time()
-    service = get_emby_service()
-    if not service:
-        raise HTTPException(status_code=400, detail="未配置 Emby 服务器")
     
-    config = get_config()
-    active_server_id = config.get("active_server_id")
-    
-    logger.info(f"🚀 [同步] 启动隔离同步引擎 (Server: {active_server_id}, Concurrency: 10)...")
-    
-    unique_items = {} 
-    item_to_series_tmdb = {}
+    try:
+        async with AsyncSessionLocal() as db:
+            service = get_emby_service()
+            if not service:
+                logger.error("❌ [同步] 未配置 Emby 服务器")
+                return
 
-    async def fetch_paged(types, p_id=None):
-        fetched = []
-        limit = 300
-        start = 0
-        while True:
-            params = {
-                "IncludeItemTypes": ",".join(types), "Recursive": "true",
-                "Fields": "Path,ProductionYear,ProviderIds,MediaStreams,DisplayTitle,SortName,ParentId,SeriesId,SeasonId,IndexNumber,ParentIndexNumber",
-                "StartIndex": start, "Limit": limit
-            }
-            if p_id: params["ParentId"] = p_id
-            resp = await service._request("GET", "/Items", params=params)
-            if not resp or resp.status_code != 200: break
-            batch = resp.json().get("Items", [])
-            if not batch: break
-            fetched.extend(batch)
-            if len(batch) < limit: break
-            start += limit
-        return fetched
-
-    # 1. 抓取 Movie 和 Series
-    top_items = await fetch_paged(["Movie", "Series"])
-    for i in top_items:
-        unique_items[i["Id"]] = i
-        if i.get("Type") == "Series":
-            tmdb = i.get("ProviderIds", {}).get("Tmdb")
-            if tmdb: item_to_series_tmdb[i["Id"]] = tmdb
-    
-    # 2. 并行处理剧集子项
-    series_items = [i for i in top_items if i.get("Type") == "Series"]
-    total_series = len(series_items)
-    logger.info(f"┣ 📂 准备并发解析 {total_series} 个剧集的子层级...")
-
-    sem = asyncio.Semaphore(10)
-    processed_count = 0
-
-    async def process_single_series(s_item):
-        nonlocal processed_count
-        async with sem:
-            s_tmdb = item_to_series_tmdb.get(s_item["Id"])
-            children = await fetch_paged(["Season", "Episode"], p_id=s_item["Id"])
-            for child in children:
-                if s_tmdb and not child.get("ProviderIds", {}).get("Tmdb"):
-                    if "ProviderIds" not in child: child["ProviderIds"] = {}
-                    child["ProviderIds"]["Tmdb"] = s_tmdb
-                unique_items[child["Id"]] = child
+            config = get_config()
+            active_server_id = config.get("active_server_id")
+            logger.info(f"🚀 [后台同步] 启动 (Server: {active_server_id})...")
             
-            processed_count += 1
-            if processed_count % 20 == 0 or processed_count == total_series:
-                logger.info(f"┃  🕒 同步进度: {processed_count}/{total_series}...")
+            unique_items = {} 
+            item_to_series_tmdb = {}
 
-    await asyncio.gather(*[process_single_series(s) for s in series_items])
-    
-    # 3. 隔离式入库操作
-    logger.info(f"┣ 💾 正在将 {len(unique_items)} 条数据持久化至本地库 (Server: {active_server_id})...")
-    await db.execute(delete(MediaItem).where(MediaItem.server_id == active_server_id))
-    
-    for item_id, item in unique_items.items():
-        v = next((s for s in item.get("MediaStreams", []) if s.get("Type") == "Video"), {})
-        a = next((s for s in item.get("MediaStreams", []) if s.get("Type") == "Audio"), {})
-        
-        s_num = item.get("ParentIndexNumber") if item.get("Type") == "Episode" else item.get("IndexNumber") if item.get("Type") == "Season" else None
-        e_num = item.get("IndexNumber") if item.get("Type") == "Episode" else None
-        p_id = item.get("SeasonId") or item.get("SeriesId") or item.get("ParentId")
-        
-        db.add(MediaItem(
-            id=item["Id"], server_id=active_server_id, name=item.get("Name"), item_type=item.get("Type"),
-            tmdb_id=item.get("ProviderIds", {}).get("Tmdb"), path=item.get("Path"),
-            year=item.get("ProductionYear"), parent_id=p_id,
-            season_num=s_num, episode_num=e_num,
-            display_title=v.get("DisplayTitle", "N/A"), video_codec=v.get("Codec", "N/A"),
-            video_range=v.get("VideoRange", "N/A"), audio_codec=a.get("Codec", "N/A"),
-            raw_data=item
-        ))
-    
-    await db.commit()
-    process_time = (time.time() - start_time) * 1000
-    audit_log("媒体库隔离同步成功", process_time, [
-        f"服务器: {active_server_id}",
-        f"同步条目数: {len(unique_items)}"
-    ])
-    logger.info(f"✅ [同步] 完成，总耗时: {int(process_time/1000)}s")
-    return {"message": "ok"}
+            async def fetch_paged(types, p_id=None):
+                fetched = []
+                limit = 300
+                start = 0
+                while True:
+                    params = {
+                        "IncludeItemTypes": ",".join(types), "Recursive": "true",
+                        "Fields": "Path,ProductionYear,ProviderIds,MediaStreams,DisplayTitle,SortName,ParentId,SeriesId,SeasonId,IndexNumber,ParentIndexNumber",
+                        "StartIndex": start, "Limit": limit
+                    }
+                    if p_id: params["ParentId"] = p_id
+                    resp = await service._request("GET", "/Items", params=params)
+                    if not resp or resp.status_code != 200: break
+                    batch = resp.json().get("Items", [])
+                    if not batch: break
+                    fetched.extend(batch)
+                    if len(batch) < limit: break
+                    start += limit
+                return fetched
+
+            # 1. 抓取 Movie 和 Series
+            sync_status["progress"] = "正在抓取电影和剧集列表..."
+            top_items = await fetch_paged(["Movie", "Series"])
+            for i in top_items:
+                unique_items[i["Id"]] = i
+                if i.get("Type") == "Series":
+                    tmdb = i.get("ProviderIds", {}).get("Tmdb")
+                    if tmdb: item_to_series_tmdb[i["Id"]] = tmdb
+            
+            # 2. 并行处理剧集子项
+            series_items = [i for i in top_items if i.get("Type") == "Series"]
+            total_series = len(series_items)
+            
+            sem = asyncio.Semaphore(10)
+            processed_count = 0
+
+            async def process_single_series(s_item):
+                nonlocal processed_count
+                async with sem:
+                    s_tmdb = item_to_series_tmdb.get(s_item["Id"])
+                    children = await fetch_paged(["Season", "Episode"], p_id=s_item["Id"])
+                    for child in children:
+                        if s_tmdb and not child.get("ProviderIds", {}).get("Tmdb"):
+                            if "ProviderIds" not in child: child["ProviderIds"] = {}
+                            child["ProviderIds"]["Tmdb"] = s_tmdb
+                        unique_items[child["Id"]] = child
+                    
+                    processed_count += 1
+                    if processed_count % 10 == 0:
+                        sync_status["progress"] = f"正在解析剧集内容: {processed_count}/{total_series}"
+
+            await asyncio.gather(*[process_single_series(s) for s in series_items])
+            
+            # 3. 持久化
+            sync_status["progress"] = f"正在写入数据库 ({len(unique_items)} 条)..."
+            await db.execute(delete(MediaItem).where(MediaItem.server_id == active_server_id))
+            
+            for item_id, item in unique_items.items():
+                v = next((s for s in item.get("MediaStreams", []) if s.get("Type") == "Video"), {})
+                a = next((s for s in item.get("MediaStreams", []) if s.get("Type") == "Audio"), {})
+                
+                s_num = item.get("ParentIndexNumber") if item.get("Type") == "Episode" else item.get("IndexNumber") if item.get("Type") == "Season" else None
+                e_num = item.get("IndexNumber") if item.get("Type") == "Episode" else None
+                p_id = item.get("SeasonId") or item.get("SeriesId") or item.get("ParentId")
+                
+                db.add(MediaItem(
+                    id=item["Id"], server_id=active_server_id, name=item.get("Name"), item_type=item.get("Type"),
+                    tmdb_id=item.get("ProviderIds", {}).get("Tmdb"), path=item.get("Path"),
+                    year=item.get("ProductionYear"), parent_id=p_id,
+                    season_num=s_num, episode_num=e_num,
+                    display_title=v.get("DisplayTitle", "N/A"), video_codec=v.get("Codec", "N/A"),
+                    video_range=v.get("VideoRange", "N/A"), audio_codec=a.get("Codec", "N/A"),
+                    raw_data=item
+                ))
+            
+            await db.commit()
+            
+            process_time = (time.time() - start_time) * 1000
+            audit_log("媒体库后台同步完成", process_time, [f"总数: {len(unique_items)}"])
+            logger.info(f"✅ [后台同步] 完成，总耗时: {int(process_time/1000)}s")
+            
+    except Exception as e:
+        logger.error(f"❌ [后台同步] 异常失败: {str(e)}")
+        sync_status["progress"] = f"错误: {str(e)}"
+    finally:
+        sync_status["is_syncing"] = False
+        sync_status["last_run"] = time.strftime("%Y-%m-%d %H:%M:%S")
+        sync_status["progress"] = "同步完成"
+
+
 
 @router.get("/items")
 async def get_all_items(query_text: Optional[str] = None, item_type: Optional[str] = None, parent_id: Optional[str] = None, db: AsyncSession = Depends(get_db)):
