@@ -207,7 +207,7 @@ const handleCreateBackup = async () => {
     await axios.post('/api/pgsql/backups/create', {
       config: props.host,
       req: { dbname: selectedDbToBackup.value }
-    })
+    }, { timeout: 0 }) // 覆盖全局超时，设置永不超时
     message.success('备份创建成功')
     showCreateModal.value = false
     fetchBackups()
@@ -231,7 +231,8 @@ const handleRestore = async () => {
   actionLoading.value = true
   try {
     await axios.post(`/api/pgsql/backups/restore/${selectedBackup.value.filename}`, props.host, {
-      params: { dbname: selectedDbToRestore.value }
+      params: { dbname: selectedDbToRestore.value },
+      timeout: 0 // 覆盖全局超时，设置永不超时
     })
     message.success('数据库还原成功')
     showRestoreModal.value = false
