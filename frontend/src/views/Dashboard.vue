@@ -3,165 +3,79 @@
     <n-space vertical size="large">
       <!-- 页面标题区 -->
       <div class="page-header">
-        <n-h2 prefix="bar" align-text><n-text type="primary">管理仪表盘</n-text></n-h2>
-        <n-text depth="3">欢迎使用 Lens，在此查看系统概览与执行核心任务。</n-text>
+        <n-h2 prefix="bar" align-text><n-text type="primary">项目概览</n-text></n-h2>
+        <n-text depth="3">Lens - 专注于 Emby 媒体库自动化管理与开发者工具箱的集成平台。</n-text>
       </div>
 
-      <!-- 核心统计卡片 -->
-      <n-grid :x-gap="12" :y-gap="12" :cols="4" item-responsive responsive="screen">
-        <n-gi span="4 m:2 l:1">
-          <n-card bordered size="small" hoverable>
-            <n-statistic label="电影总数" :value="stats.movies">
-              <template #prefix><n-icon><MovieIcon /></n-icon></template>
-            </n-statistic>
-          </n-card>
-        </n-gi>
-        <n-gi span="4 m:2 l:1">
-          <n-card bordered size="small" hoverable>
-            <n-statistic label="剧集总数" :value="stats.series">
-              <template #prefix><n-icon><SeriesIcon /></n-icon></template>
-            </n-statistic>
-          </n-card>
-        </n-gi>
-        <n-gi span="4 m:2 l:1">
-          <n-card bordered size="small" hoverable>
-            <n-statistic label="重复组" :value="stats.duplicates">
-              <template #prefix><n-icon><DedupeIcon /></n-icon></template>
-            </n-statistic>
-          </n-card>
-        </n-gi>
-        <n-gi span="4 m:2 l:1">
-          <n-card bordered size="small" hoverable>
-            <n-statistic label="服务状态" :value="stats.status === 'connected' ? '已连接' : '未就绪'">
-              <template #prefix>
-                <n-icon :color="stats.status === 'connected' ? 'var(--primary-color)' : '#f0a020'">
-                  <StatusIcon />
-                </n-icon>
-              </template>
-            </n-statistic>
-          </n-card>
-        </n-gi>
-      </n-grid>
-
       <n-grid :x-gap="12" :y-gap="12" :cols="24" item-responsive responsive="screen">
-        <!-- EMBY 核心功能区 -->
+        <!-- 左侧：项目介绍 -->
         <n-gi span="24 m:16">
-          <n-space vertical size="large">
-            <n-card title="EMBY 功能快捷入口" segmented size="small">
-              <n-grid :x-gap="8" :y-gap="8" :cols="2" item-responsive>
-                <n-gi v-for="tool in embyTools" :key="tool.key">
-                  <n-card 
-                    embedded 
-                    size="small" 
-                    hoverable 
-                    class="tool-card"
-                    @click="navigateTo(tool.key)"
-                  >
-                    <n-space align="center">
-                      <n-icon size="24" color="var(--primary-color)">
-                        <component :is="tool.icon" />
-                      </n-icon>
-                      <div>
-                        <div style="font-weight: bold; font-size: 0.95rem">{{ tool.label }}</div>
-                        <n-text depth="3" style="font-size: 0.8rem">{{ tool.desc }}</n-text>
-                      </div>
-                    </n-space>
-                  </n-card>
-                </n-gi>
-              </n-grid>
-            </n-card>
+          <n-card title="关于 Lens (Project Introduction)" segmented>
+            <div class="intro-content">
+              <n-p>
+                Lens 是一款专为媒体发烧友和开发者打造的开源管理平台。它不仅是一个 Emby 的辅助工具，更是一个集成了自动化运维、元数据抓取、网络开发工具和系统监控的综合性 Workstation。
+              </n-p>
+              
+              <n-h3 prefix="bar">核心特性 (Key Features)</n-h3>
+              <n-ul>
+                <n-li>
+                  <n-text strong>智能媒体去重 (Dedupe Ultimate):</n-text>
+                  基于 TMDB ID 与画质特征的深度比对引擎，支持安全拦截、内容互补识别及白名单路径保护。
+                </n-li>
+                <n-li>
+                  <n-text strong>自动化标签系统 (Auto-Tagging):</n-text>
+                  通过规则引擎自动分析媒体属性，一键同步至 Emby，极大提升搜索与分拣体验。
+                </n-li>
+                <n-li>
+                  <n-text strong>开发者实验室 (Lab Center):</n-text>
+                  深度集成 TMDB、Bangumi 等元数据 API 的探测工具，支持演员池全量生成与原名自动匹配。
+                </n-li>
+                <n-li>
+                  <n-text strong>全栈运维工具 (DevOps Toolkit):</n-text>
+                  内置 Docker 容器管理、多主机 SSH 终端、PostgreSQL 备份还原以及多介质同步方案。
+                </n-li>
+              </n-ul>
 
-            <n-card title="网站元数据查询" segmented size="small">
-              <n-grid :x-gap="8" :y-gap="8" :cols="2" item-responsive>
-                <n-gi v-for="tool in metadataTools" :key="tool.key">
-                  <n-card 
-                    embedded 
-                    size="small" 
-                    hoverable 
-                    class="tool-card"
-                    @click="navigateTo(tool.key)"
-                  >
-                    <n-space align="center">
-                      <n-icon size="24" color="var(--primary-color)">
-                        <component :is="tool.icon" />
-                      </n-icon>
-                      <div>
-                        <div style="font-weight: bold; font-size: 0.95rem">{{ tool.label }}</div>
-                        <n-text depth="3" style="font-size: 0.8rem">{{ tool.desc }}</n-text>
-                      </div>
-                    </n-space>
-                  </n-card>
-                </n-gi>
-              </n-grid>
-            </n-card>
-
-            <n-card title="系统安全与控制" segmented size="small">
-              <n-grid :x-gap="8" :y-gap="8" :cols="2" item-responsive>
-                <n-gi v-for="tool in systemTools" :key="tool.key">
-                  <n-card 
-                    embedded 
-                    size="small" 
-                    hoverable 
-                    class="tool-card"
-                    @click="navigateTo(tool.key)"
-                  >
-                    <n-space align="center">
-                      <n-icon size="24" color="var(--primary-color)">
-                        <component :is="tool.icon" />
-                      </n-icon>
-                      <div>
-                        <div style="font-weight: bold; font-size: 0.95rem">{{ tool.label }}</div>
-                        <n-text depth="3" style="font-size: 0.8rem">{{ tool.desc }}</n-text>
-                      </div>
-                    </n-space>
-                  </n-card>
-                </n-gi>
-              </n-grid>
-            </n-card>
-
-            <n-card title="其他工具快捷入口" segmented size="small">
-              <n-grid :x-gap="8" :y-gap="8" :cols="2" item-responsive>
-                <n-gi v-for="tool in otherTools" :key="tool.key">
-                  <n-card 
-                    embedded 
-                    size="small" 
-                    hoverable 
-                    class="tool-card"
-                    @click="navigateTo(tool.key)"
-                  >
-                    <n-space align="center">
-                      <n-icon size="24" color="var(--primary-color)">
-                        <component :is="tool.icon" />
-                      </n-icon>
-                      <div>
-                        <div style="font-weight: bold; font-size: 0.95rem">{{ tool.label }}</div>
-                        <n-text depth="3" style="font-size: 0.8rem">{{ tool.desc }}</n-text>
-                      </div>
-                    </n-space>
-                  </n-card>
-                </n-gi>
-              </n-grid>
-            </n-card>
-          </n-space>
+              <n-h3 prefix="bar">项目愿景 (Vision)</n-h3>
+              <n-blockquote>
+                "Make Media Management Invisible."
+                <br />
+                旨在通过高度自动化的手段，让用户告别繁琐的元数据纠偏，将精力集中在享受媒体内容本身。
+              </n-blockquote>
+            </div>
+            
+            <template #footer>
+              <n-space>
+                <n-button quaternary type="primary" tag="a" href="https://github.com/pipi20xx/Lens" target="_blank">
+                  <template #icon><n-icon><CodeIcon /></n-icon></template>
+                  GitHub 源码
+                </n-button>
+                <n-button quaternary type="info" tag="a" href="https://github.com/pipi20xx/Lens/issues" target="_blank">
+                  <template #icon><n-icon><BugIcon /></n-icon></template>
+                  提交反馈 (Issues)
+                </n-button>
+              </n-space>
+            </template>
+          </n-card>
         </n-gi>
 
-        <!-- 系统信息区 -->
+        <!-- 右侧：系统信息区 -->
         <n-gi span="24 m:8">
-          <n-card title="系统状态" segmented size="small">
+          <n-card title="系统状态监控" segmented size="small">
             <n-list size="small">
               <n-list-item>
                 <n-space justify="space-between">
-                  <n-text depth="3">当前版本</n-text>
+                  <n-text depth="3">运行版本 (Current)</n-text>
                   <n-space :size="4" align="center">
                     <n-tag size="small" type="primary" quaternary>{{ versionInfo.current }}</n-tag>
-                    <n-tag v-if="!versionInfo.has_update" size="small" type="success" quaternary>最新</n-tag>
-                    <n-tag v-else size="small" type="error" quaternary>有更新</n-tag>
+                    <n-tag v-if="!versionInfo.has_update" size="small" type="success" quaternary>Latest</n-tag>
+                    <n-tag v-else size="small" type="error" quaternary>Update Avail.</n-tag>
                   </n-space>
                 </n-space>
               </n-list-item>
               <n-list-item>
                 <n-space justify="space-between" align="center">
-                  <n-text depth="3">远端镜像 (DockerHub)</n-text>
+                  <n-text depth="3">远端构建 (DockerHub)</n-text>
                   <n-space :size="8" align="center">
                     <n-text style="font-size: 13px; font-family: monospace">{{ versionInfo.latest }}</n-text>
                     <n-button 
@@ -179,29 +93,14 @@
               </n-list-item>
               <n-list-item>
                 <n-space justify="space-between">
-                  <n-text depth="3">项目源码</n-text>
-                  <n-button 
-                    text 
-                    tag="a" 
-                    href="https://github.com/pipi20xx/Lens" 
-                    target="_blank" 
-                    type="primary"
-                    style="font-size: 13px"
-                  >
-                    GitHub 仓库
-                  </n-button>
-                </n-space>
-              </n-list-item>
-              <n-list-item>
-                <n-space justify="space-between">
-                  <n-text depth="3">运行环境</n-text>
-                  <n-tag size="small" type="info" quaternary>Production</n-tag>
+                  <n-text depth="3">运行环境 (Env)</n-text>
+                  <n-tag size="small" type="info" quaternary>Lens Core v2</n-tag>
                 </n-space>
               </n-list-item>
             </n-list>
             
             <n-alert v-if="versionInfo.has_update" type="warning" size="small" :bordered="false" style="margin-top: 12px">
-              发现新版本 {{ versionInfo.latest }}，建议立即升级以获取最新功能。
+              检测到新版本 {{ versionInfo.latest }}，请及时更新。
             </n-alert>
 
             <template #footer>
@@ -215,11 +114,11 @@
                   @click="handleUpgrade"
                 >
                   <template #icon><n-icon><UpgradeIcon /></n-icon></template>
-                  {{ upgrading ? '升级脚本已启动...' : '立即升级系统' }}
+                  {{ upgrading ? '正在执行更新任务...' : '立即执行系统升级' }}
                 </n-button>
                 <n-button block size="small" type="primary" secondary @click="navigateTo('SettingsView')">
                   <template #icon><n-icon><SettingsIcon /></n-icon></template>
-                  进入配置中心
+                  配置中心
                 </n-button>
               </n-space>
             </template>
@@ -230,78 +129,31 @@
   </div>
 </template>
 
-<style scoped>
-.dashboard-page {
-  width: 100%;
-}
-.tool-card {
-  cursor: pointer;
-  transition: transform 0.2s;
-}
-.tool-card:hover {
-  transform: translateY(-2px);
-  border-color: var(--primary-color);
-}
-:deep(.n-statistic .n-statistic__label) {
-  font-weight: 500;
-  color: var(--text-color);
-  opacity: 0.8;
-}
-:deep(.n-statistic .n-statistic-value__content) {
-  color: var(--primary-color);
-}
-</style>
-
 <script setup lang="ts">
-import { ref, onMounted, markRaw } from 'vue'
+import { ref, onMounted } from 'vue'
 import { 
-  NSpace, NGrid, NGi, NCard, NStatistic, NIcon, NText, 
-  NH2, NList, NListItem, NTag, NButton, NTooltip, NBadge,
-  NAlert, useMessage
+  NSpace, NGrid, NGi, NCard, NIcon, NText, 
+  NH2, NH3, NP, NUl, NLi, NBlockquote,
+  NList, NListItem, NTag, NButton, NAlert, useMessage
 } from 'naive-ui'
 import axios from 'axios'
 import {
-  MovieRound as MovieIcon,
-  LiveTvRound as SeriesIcon,
-  AutoDeleteRound as DedupeIcon,
-  SensorsRound as StatusIcon,
-  CategoryRound as CategoryIcon,
-  LayersRound as CleanupIcon,
-  LockOpenRound as LockIcon,
-  SearchRound as QueryIcon,
-  MyLocationRound as TargetIcon,
-  YoutubeSearchedForRound as DeepSearchIcon,
-  ScienceRound as LabIcon,
-  ContactPageRound as ActorLabIcon,
-  PeopleAltRound as ActorIcon,
-  SyncAltRound as WebhookIcon,
-  StorageRound as PostgresIcon,
-  BackupTableRound as BackupIcon,
-  CameraRound as LensIcon,
+  CodeOutlined as CodeIcon,
+  BugReportOutlined as BugIcon,
   DnsRound as DockerIcon,
-  TerminalRound as TerminalIcon,
-  AdminPanelSettingsRound as SecurityIcon,
-  PersonOutlineRound as ProfileIcon,
-  NotificationsActiveRound as NotificationIcon,
-  CloudUploadRound as BuildIcon,
   SettingsOutlined as SettingsIcon,
   SystemUpdateAltOutlined as UpgradeIcon
 } from '@vicons/material'
 import { currentViewKey } from '../store/navigationStore'
 
-const stats = ref({
-  movies: 0,
-  series: 0,
-  duplicates: 0,
-  status: 'idle'
-})
-
 const message = useMessage()
 const upgrading = ref(false)
 
 const versionInfo = ref({
-        current: 'v2.5.0',
-        latest: 'v2.5.0',  hasUpdate: false
+  current: 'v2.5.0',
+  latest: 'v2.5.0',
+  has_update: false,
+  docker_hub: 'https://hub.docker.com/r/pipi20xx/lens'
 })
 
 const handleUpgrade = async () => {
@@ -309,178 +161,17 @@ const handleUpgrade = async () => {
   try {
     const res = await axios.post('/api/system/upgrade')
     message.success(res.data.message, { duration: 10000 })
-    // 给系统留出时间进行构建和重启
     setTimeout(() => {
       window.location.reload()
     }, 20000)
   } catch (e: any) {
-    message.error(e.response?.data?.detail || '启动升级失败，请检查 Docker 主机 SSH 配置')
+    message.error(e.response?.data?.detail || '启动升级失败')
     upgrading.value = false
   }
 }
 
-const embyTools = [
-  { 
-    label: '类型映射管理', 
-    key: 'TypeManagerView', 
-    icon: markRaw(CategoryIcon), 
-    desc: '配置媒体库类型与分类规则' 
-  },
-  { 
-    label: '重复项清理', 
-    key: 'DedupeView', 
-    icon: markRaw(DedupeIcon), 
-    desc: '扫描并合并库中的重复视频' 
-  },
-  { 
-    label: '媒体净化清理', 
-    key: 'CleanupToolsView', 
-    icon: markRaw(CleanupIcon), 
-    desc: '清空演职员与修复剧集类型' 
-  },
-  { 
-    label: '元数据锁定器', 
-    key: 'LockManagerView', 
-    icon: markRaw(LockIcon), 
-    desc: '批量锁定或解锁元数据字段' 
-  },
-  { 
-    label: '项目元数据查询', 
-    key: 'EmbyItemQueryView', 
-    icon: markRaw(QueryIcon), 
-    desc: '深入查看 Emby 原始元数据' 
-  },
-  { 
-    label: '剧集 TMDB 反查', 
-    key: 'TmdbReverseLookupView', 
-    icon: markRaw(TargetIcon), 
-    desc: '根据文件名反查 TMDB 编号' 
-  },
-  { 
-    label: 'TMDB ID 深度搜索', 
-    key: 'TmdbIdSearchView', 
-    icon: markRaw(DeepSearchIcon), 
-    desc: '通过 ID 精确抓取媒体信息' 
-  },
-  { 
-    label: '演员信息维护', 
-    key: 'ActorManagerView', 
-    icon: markRaw(ActorIcon), 
-    desc: '同步与修复演员头像和资料' 
-  },
-  { 
-    label: '自动标签助手', 
-    key: 'AutoTagsView', 
-    icon: markRaw(CategoryIcon), 
-    desc: '根据规则自动匹配媒体标签' 
-  }
-]
-
-const metadataTools = [
-  { 
-    label: 'TMDB 实验中心', 
-    key: 'TmdbLabView', 
-    icon: markRaw(LabIcon), 
-    desc: 'TMDB 数据抓取与结构化预览' 
-  },
-  { 
-    label: 'Bangumi 实验室', 
-    key: 'BangumiLabView', 
-    icon: markRaw(LabIcon), 
-    desc: '番剧元数据查询与分拣参考' 
-  },
-  { 
-    label: 'TMDB 演员实验室', 
-    key: 'ActorLabView', 
-    icon: markRaw(ActorLabIcon), 
-    desc: '演员资料深度抓取与探针' 
-  }
-]
-
-const systemTools = [
-  { 
-    label: '账号安全管理', 
-    key: 'AccountManagerView', 
-    icon: markRaw(ProfileIcon), 
-    desc: '管理登录验证、密码及 2FA' 
-  },
-  { 
-    label: '外部控制体系', 
-    key: 'ExternalControlView', 
-    icon: markRaw(SecurityIcon), 
-    desc: '管理 API Token 与审计日志' 
-  },
-  { 
-    label: '通知消息中心', 
-    key: 'NotificationManagerView', 
-    icon: markRaw(NotificationIcon), 
-    desc: '配置 Telegram 等多平台通知推送' 
-  }
-]
-
-const otherTools = [
-  { 
-    label: 'Docker 容器管理', 
-    key: 'DockerManagerView', 
-    icon: markRaw(DockerIcon), 
-    desc: '本地与远程 Docker 容器运维' 
-  },
-  { 
-    label: '镜像构建与推送', 
-    key: 'ImageBuilderView', 
-    icon: markRaw(BuildIcon), 
-    desc: '多架构镜像构建、推送与远程缓存' 
-  },
-  { 
-    label: '系统终端管理', 
-    key: 'TerminalManagerView', 
-    icon: markRaw(TerminalIcon), 
-    desc: '多主机 SSH 连接与快速命令管理' 
-  },
-  { 
-    label: 'PostgreSQL 管理', 
-    key: 'PostgresManagerView', 
-    icon: markRaw(PostgresIcon), 
-    desc: '数据库实例、备份与还原管理' 
-  },
-  { 
-    label: '数据备份管理', 
-    key: 'BackupManagerView', 
-    icon: markRaw(BackupIcon), 
-    desc: '多模式、跨介质的数据备份方案' 
-  },
-  { 
-    label: '站点导航页', 
-    key: 'SiteNavView', 
-    icon: markRaw(LensIcon), 
-    desc: '私有化沉浸式聚合导航首页' 
-  },
-  { 
-    label: 'Webhook 接收器', 
-    key: 'WebhookReceiverView', 
-    icon: markRaw(WebhookIcon), 
-    desc: 'Webhook 事件接收与测试工具' 
-  }
-]
-
 const navigateTo = (key: string) => {
   currentViewKey.value = key
-}
-
-const fetchStats = async () => {
-  try {
-    const res = await axios.get('/api/stats/summary')
-    if (res.data && typeof res.data === 'object') {
-      stats.value = {
-        movies: res.data.movies ?? 0,
-        series: res.data.series ?? 0,
-        duplicates: res.data.duplicates ?? 0,
-        status: res.data.status ?? 'idle'
-      }
-    }
-  } catch (e) {
-    console.error('Failed to fetch stats:', e)
-  }
 }
 
 const fetchVersion = async () => {
@@ -495,8 +186,22 @@ const fetchVersion = async () => {
 }
 
 onMounted(() => {
-  fetchStats()
   fetchVersion()
-  setInterval(fetchStats, 10000)
 })
 </script>
+
+<style scoped>
+.dashboard-page {
+  width: 100%;
+}
+:deep(.n-list-item) {
+  padding: 8px 0 !important;
+}
+.intro-content {
+  line-height: 1.6;
+}
+.n-h3 {
+  margin-top: 24px !important;
+  margin-bottom: 12px !important;
+}
+</style>
